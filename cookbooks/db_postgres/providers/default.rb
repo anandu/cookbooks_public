@@ -71,6 +71,10 @@ action :install_client do
     action :remove
   end
 
+  package "libxslt" do
+    action :install
+  end
+
   packages = ["postgresql91-libs", "postgresql91", "postgresql91-devel" ]
     Chef::Log.info("Packages to install: #{packages.join(",")}")
     packages.each do |p|
