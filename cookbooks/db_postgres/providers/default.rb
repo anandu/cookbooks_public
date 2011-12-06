@@ -74,9 +74,10 @@ action :install_client do
   packages = ["postgresql91-libs", "postgresql91", "postgresql91-devel" ]
     Chef::Log.info("Packages to install: #{packages.join(",")}")
     packages.each do |p|
-    cookbook_file "/tmp/#{p}-9.1.1-1PGDG.rhel5.x86_64.rpm" do
+    remote_file "/tmp/#{p}-9.1.1-1PGDG.rhel5.x86_64.rpm" do
       source "#{p}-9.1.1-1PGDG.rhel5.x86_64.rpm"
       mode "0644"
+      cookbook 'db_postgres
     # not_if do File.exists?("/tmp/#{p}-9.1.1-1PGDG.rhel5.x86_64.rpm") end
     end
     r = package p do
