@@ -71,10 +71,26 @@ action :install_client do
     action :remove
   end
 
+  packages = ["postgresql91-libs", "postgresql91", "postgresql91-devel" ]
+    Chef::Log.info("Packages to install: #{packages.join(",")}")
+    packages.each do |p|
+    cookbook_file "/tmp/#{p}-9.1.1-1PGDG.rhel5.x86_64.rpm" do
+      source "#{p}-9.1.1-1PGDG.rhel5.x86_64.rpm"
+      mode "0644"
+    not_if do ! File.exists?("/tmp/#{p}-9.1.1-1PGDG.rhel5.x86_64.rpm")
+    end
+    r = package p do
+      action :nothing
+      source "/tmp/#{p}-9.1.1-1PGDG.rhel5.x86_64.rpm"
+      provider Chef::Provider::Package::Rpm 
+    end
+    r.run_action(:install)
+  end
+
   # Packages from cookbook files as attachment for PostgreSQL 9.1.1
   # Install PostgreSQL client rpm
-    pgdevelrpm = ::File.join(::File.dirname(__FILE__), "..", "files", "centos", "postgresql91-devel-9.1.1-1PGDG.rhel5.#{arch}.rpm")
-    `yum -y localinstall #{pgdevelrpm}`
+  #  pgdevelrpm = ::File.join(::File.dirname(__FILE__), "..", "files", "centos", "postgresql91-devel-9.1.1-1PGDG.rhel5.#{arch}.rpm")
+  #  `yum -y localinstall #{pgdevelrpm}`
 
   else
 
