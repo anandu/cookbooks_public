@@ -123,6 +123,10 @@ action :install_server do
   arch = node[:kernel][:machine]
   arch = "x86_64" if arch == "i386"
 
+  package "uuid" do
+    action :install
+  end
+
   node[:db_postgres][:packages_install].each do |p|
       pkg = ::File.join(::File.dirname(__FILE__), "..", "files", "centos", "#{p}-9.1.1-1PGDG.rhel5.#{arch}.rpm")
       package p do
