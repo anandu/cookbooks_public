@@ -82,10 +82,15 @@ action :install_client do
   #
   # Also installs in compile phase
   #
-  r = execute "install pg gem" do
-    command "/opt/rightscale/sandbox/bin/gem install pg -- --with-pg-config=/usr/pgsql-9.1/bin/pg_config"
+  #r = execute "install pg gem" do
+  #  command "/opt/rightscale/sandbox/bin/gem install pg -- --with-pg-config=/usr/pgsql-9.1/bin/pg_config"
+  #end
+  #r.run_action(:run)
+
+  gem_package("pg") do
+    gem_binary("/opt/rightscale/sandbox/bin/gem")
+    options("-- --with-pg-config=/usr/pgsql-9.1/bin/pg_config")
   end
-  r.run_action(:run)
 
   Gem.clear_paths
   log "Gem reload forced with Gem.clear_paths"
