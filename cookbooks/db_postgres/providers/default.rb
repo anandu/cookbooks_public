@@ -71,7 +71,7 @@ action :install_client do
     action :remove
   end
 
-  packages = ["postgresql91-libs", "postgresql91", "postgresql91-devel" ]
+  packages = ["postgresql91-devel", "postgresql91", "postgresql91-devel" ]
     Chef::Log.info("Packages to install: #{packages.join(",")}")
     packages.each do |p|
     remote_file "/tmp/#{p}-9.1.1-1PGDG.rhel5.x86_64.rpm" do
