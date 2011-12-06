@@ -77,7 +77,7 @@ action :install_client do
     cookbook_file "/tmp/#{p}-9.1.1-1PGDG.rhel5.x86_64.rpm" do
       source "#{p}-9.1.1-1PGDG.rhel5.x86_64.rpm"
       mode "0644"
-    not_if do ! File.exists?("/tmp/#{p}-9.1.1-1PGDG.rhel5.x86_64.rpm")
+    not_if do ! File.exists?("/tmp/#{p}-9.1.1-1PGDG.rhel5.x86_64.rpm") end
     end
     r = package p do
       action :nothing
