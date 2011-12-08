@@ -184,7 +184,7 @@ action :install_server do
     owner "postgres"
     group "postgres"
     mode "0644"
-    # cookbook 'db_postgres'
+    cookbook 'db_postgres'
   end
 
   # Setup pg_hba.conf
@@ -195,7 +195,7 @@ action :install_server do
     owner "postgres"
     group "postgres"
     mode "0644"
-    # cookbook 'db_postgres'
+    cookbook 'db_postgres'
   end
 
   # == Setup PostgreSQL user limits
