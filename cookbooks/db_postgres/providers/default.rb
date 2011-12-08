@@ -60,17 +60,13 @@ action :install_client do
 
   # Install PostgreSQL 9.1.1 package(s)
   if node[:platform] == "centos"
-  arch = node[:kernel][:machine]
-  arch = "x86_64" if arch == "i386"
+  # arch = node[:kernel][:machine]
+  # arch = "x86_64" if arch == "i386"
+  arch = (node[:kernel][:machine] == "x86_64") ? "i686" : "i386"
 
   # Install PostgreSQL GPG Key (http://yum.postgresql.org/9.1/redhat/rhel-5-(arch)/pgdg-centos91-9.1-4.noarch.rpm)
   # pgreporpm = ::File.join(::File.dirname(__FILE__), "..", "files", "centos", "pgdg-centos91-9.1-4.noarch.rpm")
   
-  # package "postgresql-libs" do
-  #  version "8.1.23-1.el5_6.1"
-  #  action :remove
-  # end
-
   package "libxslt" do
     action :install
   end
@@ -120,8 +116,9 @@ action :install_server do
   # PostgreSQL server depends on PostgreSQL client
   action_install_client
 
-  arch = node[:kernel][:machine]
-  arch = "x86_64" if arch == "i386"
+  # arch = node[:kernel][:machine]
+  # arch = "x86_64" if arch == "i386"
+  arch = (node[:kernel][:machine] == "x86_64") ? "i686" : "i386"
 
   package "uuid" do
     action :install
@@ -211,7 +208,7 @@ action :install_server do
     variables({
       :ulimit => postgres_file_ulimit
     })
-   # cookbook 'db_postgres'
+    cookbook 'db_postgres'
   end
 
   # Change root's limitations for THIS shell.  The entry in the limits.d will be
@@ -241,7 +238,7 @@ action :setup_monitoring do
 
     TMP_FILE = "/tmp/collectd.rpm"
 
-    remote_file TMP_FILE do
+    cookbook_file TMP_FILE do
       source "collectd-postgresql-4.10.0-4.el5.#{arch}.rpm"
       cookbook 'db_postgres'
     end
