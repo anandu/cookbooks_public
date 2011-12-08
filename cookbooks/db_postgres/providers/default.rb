@@ -64,12 +64,12 @@ action :install_client do
   arch = "x86_64" if arch == "i386"
 
   # Install PostgreSQL GPG Key (http://yum.postgresql.org/9.1/redhat/rhel-5-(arch)/pgdg-centos91-9.1-4.noarch.rpm)
-    pgreporpm = ::File.join(::File.dirname(__FILE__), "..", "files", "centos", "pgdg-centos91-9.1-4.noarch.rpm")
+  # pgreporpm = ::File.join(::File.dirname(__FILE__), "..", "files", "centos", "pgdg-centos91-9.1-4.noarch.rpm")
   
-  package "postgresql-libs" do
-    version "8.1.23-1.el5_6.1"
-    action :remove
-  end
+  # package "postgresql-libs" do
+  #  version "8.1.23-1.el5_6.1"
+  #  action :remove
+  # end
 
   package "libxslt" do
     action :install
@@ -111,8 +111,8 @@ action :install_client do
     options("-- --with-pg-config=/usr/pgsql-9.1/bin/pg_config")
   end
 
-  Gem.clear_paths
-  log "Gem reload forced with Gem.clear_paths"
+  # Gem.clear_paths
+  # log "Gem reload forced with Gem.clear_paths"
 end
 
 action :install_server do
@@ -184,18 +184,18 @@ action :install_server do
     owner "postgres"
     group "postgres"
     mode "0644"
-    cookbook 'db_postgres'
+    # cookbook 'db_postgres'
   end
 
   # Setup pg_hba.conf
-  pg_hba_source = "pg_hba.conf.erb"
+  # pg_hba_source = "pg_hba.conf.erb"
 
   template value_for_platform([ "centos", "redhat", "suse" ] => {"default" => "#{node[:db_postgres][:confdir]}/pg_hba.conf"}, "default" => "#{node[:db_postgres][:confdir]}/pg_hba.conf") do
-    source pg_hba_source
+    source pg_hba.conf.erb
     owner "postgres"
     group "postgres"
     mode "0644"
-    cookbook 'db_postgres'
+    # cookbook 'db_postgres'
   end
 
   # == Setup PostgreSQL user limits
@@ -211,7 +211,7 @@ action :install_server do
     variables({
       :ulimit => postgres_file_ulimit
     })
-    cookbook 'db_postgres'
+   # cookbook 'db_postgres'
   end
 
   # Change root's limitations for THIS shell.  The entry in the limits.d will be
@@ -223,7 +223,7 @@ action :install_server do
   # == Start PostgreSQL
   #
   service "postgresql-9.1" do
-    supports :status => true, :restart => true, :reload => true
+    # supports :status => true, :restart => true, :reload => true
     action :start
   end
     
