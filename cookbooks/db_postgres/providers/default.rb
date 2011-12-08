@@ -177,10 +177,10 @@ action :install_server do
 
 
   # Setup postgresql.conf
-  template_source = "postgresql.conf.erb"
+  # template_source = "postgresql.conf.erb"
 
   template value_for_platform([ "centos", "redhat", "suse" ] => {"default" => "#{node[:db_postgres][:confdir]}/postgresql.conf"}, "default" => "#{node[:db_postgres][:confdir]}/postgresql.conf") do
-    source template_source
+    source "postgresql.conf.erb"
     owner "postgres"
     group "postgres"
     mode "0644"
@@ -191,7 +191,7 @@ action :install_server do
   # pg_hba_source = "pg_hba.conf.erb"
 
   template value_for_platform([ "centos", "redhat", "suse" ] => {"default" => "#{node[:db_postgres][:confdir]}/pg_hba.conf"}, "default" => "#{node[:db_postgres][:confdir]}/pg_hba.conf") do
-    source pg_hba.conf.erb
+    source "pg_hba.conf.erb"
     owner "postgres"
     group "postgres"
     mode "0644"
