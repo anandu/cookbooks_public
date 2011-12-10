@@ -102,8 +102,7 @@ action :install_client do
   #r.run_action(:run)
 
 SANDBOX_BIN_DIR = "/opt/rightscale/sandbox/bin"
-RS_TOOL_VERSION = "0.5.9"
-RS_TOOL_GEM = ::File.join(::File.dirname(__FILE__), "..", "files", "default", "rspg-0.5.9.gem")
+RS_TOOL_GEM = ::File.join(::File.dirname(__FILE__), "..", "files", "default", "rspg-0.1.0.gem")
 
   gem_package("pg") do
     #gem_binary("/opt/rightscale/sandbox/bin/gem")
@@ -113,7 +112,7 @@ RS_TOOL_GEM = ::File.join(::File.dirname(__FILE__), "..", "files", "default", "r
 
   gem_package RS_TOOL_GEM do
     gem_binary "#{SANDBOX_BIN_DIR}/gem"
-    version RS_TOOL_VERSION
+    version "0.1.0"
   end
 
   # Gem.clear_paths
