@@ -51,10 +51,10 @@ define :db_do_backup, :force => false, :backup_type => "primary" do
   # == Check if database is able to be backed up (initialized)
   # must be done in ruby block to expand node during converge not compile
   Chef::Log.info "Checking db_init_status making sure db ready for backup"
-  db_init_status :check do
-    expected_state :initialized
-    error_message "Database not initialized."
-  end
+  #db_init_status :check do
+  #  expected_state :initialized
+  #  error_message "Database not initialized."
+  #end
 
   # == Verify initalized database
   # Check the node state to verify that we have correctly initialized this server.
