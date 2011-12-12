@@ -77,9 +77,10 @@ define :db_do_backup, :force => false, :backup_type => "primary" do
   #end
   
   #log "  Performing (#{do_backup_type} backup) lock DB and write backup info file..."
-  #db DATA_DIR do
-  #  action [ :lock, :write_backup_info ]
-  #end
+  db DATA_DIR do
+    #action [ :lock, :write_backup_info ]
+    action [ :lock ]
+  end
   
   log "  Performing (#{do_backup_type} backup)Snapshot with lineage #{node[:db][:backup][:lineage]}.."
   # Requires block_device node[:db][:block_device] to be instantiated
