@@ -15,7 +15,7 @@ rs_utils_marker :begin
 raise "Server terminate saftey not off.  Override db/force_safety to run this recipe" unless node[:db][:force_safety] == "off"
 
 log "  Brute force tear down of the setup....."
-=======
+#c
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 # EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 # MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
