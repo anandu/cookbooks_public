@@ -71,15 +71,15 @@ define :db_do_backup, :force => false, :backup_type => "primary" do
   # See below for more information about 'backup.rb'
   # if 'force' is true, kills pid and removes locks
   #
-  block_device DATA_DIR do
-    action :backup_lock_take
-    force do_force
-  end
+  #block_device DATA_DIR do
+  #  action :backup_lock_take
+  #  force do_force
+  #end
   
-  log "  Performing (#{do_backup_type} backup) lock DB and write backup info file..."
-  db DATA_DIR do
-    action [ :lock, :write_backup_info ]
-  end
+  #log "  Performing (#{do_backup_type} backup) lock DB and write backup info file..."
+  #db DATA_DIR do
+  #  action [ :lock, :write_backup_info ]
+  #end
   
   log "  Performing (#{do_backup_type} backup)Snapshot with lineage #{node[:db][:backup][:lineage]}.."
   # Requires block_device node[:db][:block_device] to be instantiated
