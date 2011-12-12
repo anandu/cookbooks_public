@@ -19,6 +19,8 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+include RightScale::Database::PostgreSQL::Helper
+
 action :stop do
   @db = init(new_resource)
   @db.stop
@@ -55,6 +57,61 @@ action :reset do
   @db.reset
 end
 
+action :write_backup_info do
+ # masterstatus = Hash.new
+ # masterstatus = RightScale::Database::PostgreSQL::Helper.do_query(node, 'select version()')
+ # masterstatus['Master_IP'] = node[:db][:current_master_ip]
+ # masterstatus['Master_instance_uuid'] = node[:db][:current_master_uuid]
+ # slavestatus = RightScale::Database::PostgreSQL::Helper.do_query(node, 'SHOW SLAVE STATUS')
+ # slavestatus ||= Hash.new
+ # if node[:db][:this_is_master]
+    Chef::Log.info "Backing up Master info"
+ # else
+ #   Chef::Log.info "Backing up slave replication status"
+#    masterstatus['File'] = slavestatus['Relay_Master_Log_File']
+#    masterstatus['Position'] = slavestatus['Exec_Master_Log_Pos']
+ # end
+  Chef::Log.info "Saving master info...:\n#{masterstatus.to_yaml}"
+  ::File.open(::File.join(node[:db][:data_dir], RightScale::Database::PostgreSQL::Helper::SNAPSHOT_POSITION_FILENAME), ::File::CREAT|::File::TRUNC|::File::RDWR) do |out|
+    YAML.dump(masterstatus, out)
+  end
+end
+
+action :pre_restore_check do
+  @db = init(new_resource)
+  @db.pre_restore_sanity_check
+end
+
+action :post_restore_cleanup do
+  @db = init(new_resource)
+  @db.symlink_datadir("/var/lib/pgsql", node[:db][:data_dir])
+  # TODO: used for replication
+  # @db.post_restore_sanity_check
+  @db.post_restore_cleanup
+end
+
+action :pre_backup_check do
+  @db = init(new_resource)
+  @db.pre_backup_check
+end
+
+action :post_backup_cleanup do
+  @db = init(new_resource)
+  @db.post_backup_steps
+end
+
+action :set_privileges do
+  priv = new_resource.privilege
+  priv_username = new_resource.privilege_username
+  priv_password = new_resource.privilege_password
+  priv_database = new_resource.privilege_database
+  db_postgres_set_privileges "setup db privileges" do
+    preset priv
+    username priv_username
+    password priv_password
+    database priv_database
+  end
+end
 
 action :install_client do
 
