@@ -35,9 +35,9 @@ end
 log "  Setting state of database to be 'initialized'..."
 db_init_status :set
 
+log " Starting up service later"
 db DATA_DIR do
   #action [ :move_data_dir, :start ]
-  log " Starting up service later"
   action [  :start ]
 end
 
