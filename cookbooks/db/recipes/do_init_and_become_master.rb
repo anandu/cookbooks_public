@@ -35,10 +35,10 @@ log "  Setting state of database to be 'initialized'..."
 db_init_status :set
 
 log "  Registering as master..."
-db_register_master
+#db_register_master
 
 log "  Adding replication privileges for this master database..."
-include_recipe "db::setup_replication_privileges"
+#include_recipe "db::setup_replication_privileges"
 
 log "  Forcing a backup so slaves can init from this master..."
 db_do_backup "do force backup" do
