@@ -20,6 +20,8 @@ recipe  "db::install_server", "Installs and sets up the packages that are requir
 
 recipe  "db::setup_monitoring", "Installs the collectd plugin for database monitoring support, which is required to enable monitoring and alerting functionality for your servers."
 
+recipe  "db::setup_block_device", "This will initialize your database onto a block device that supports backup and restore operations."
+
 # == Common Database Recipes
 #
 recipe  "db::do_backup", "Creates a backup of the database using persistent storage in the current cloud.  On Rackspace, LVM backups are uploaded to the specified CloudFiles container.  For all other clouds, volume snapshots (like EBS) are used."
@@ -149,7 +151,8 @@ attribute "db/backup/lineage",
     "db::do_backup_schedule_disable",
     "db::do_force_reset",
     "db::do_secondary_backup",
-    "db::do_secondary_restore"
+    "db::do_secondary_restore",
+    "db::setup_block_device"
   ]
   
 attribute "db/backup/timestamp_override",
