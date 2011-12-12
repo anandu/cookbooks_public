@@ -37,9 +37,9 @@ module RightScale
 
         def init(new_resource)
           begin
-            require 'rspg'
+            require 'rightscale_tools'
           rescue LoadError
-            Chef::Log.warn("This database cookbook requires our premium 'rspg' gem.")
+            Chef::Log.warn("This database cookbook requires our premium 'rightscale_tools' gem.")
             Chef::Log.warn("Please contact Rightscale to upgrade your account.")
           end
           mount_point = new_resource.name
