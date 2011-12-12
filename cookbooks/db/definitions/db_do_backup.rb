@@ -46,7 +46,7 @@ define :db_do_backup, :force => false, :backup_type => "primary" do
 
   # Initializing the database, as this server is standalone now
   #log "  Setting state of database to be 'initialized'..."
-  #db_init_status :set
+  db_init_status :set
 
   # == Check if database is able to be backed up (initialized)
   # must be done in ruby block to expand node during converge not compile
