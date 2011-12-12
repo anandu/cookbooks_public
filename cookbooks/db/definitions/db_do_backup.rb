@@ -44,6 +44,10 @@ define :db_do_backup, :force => false, :backup_type => "primary" do
   do_force        = params[:force] == true ? true : false
   do_backup_type  = params[:backup_type] == "primary" ? "primary" : "secondary"
 
+  # Initializing the database, as this server is standalone now
+  #log "  Setting state of database to be 'initialized'..."
+  db_init_status :set
+
   # == Check if database is able to be backed up (initialized)
   # must be done in ruby block to expand node during converge not compile
   Chef::Log.info "Checking db_init_status making sure db ready for backup"
