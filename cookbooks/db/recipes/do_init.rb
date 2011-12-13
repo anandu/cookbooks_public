@@ -16,30 +16,23 @@ db_init_status :check do
 end
 
 log "  Stopping database..."
-db DATA_DIR do
-  action :stop
-end
+#db DATA_DIR do
+#  action :stop
+#end
 
-log "  Creating block device..."
-block_device DATA_DIR do
-  lineage node[:db][:backup][:lineage]
-  action :create
-end
+#log "  Creating block device..."
+#block_device DATA_DIR do
+#  lineage node[:db][:backup][:lineage]
+#  action :create
+#end
 
-log "  Moving database to block device and starting database..."
-db DATA_DIR do
-  #action [ :move_data_dir, :start ]
-  action [ :move_data_dir ]
-end
+#log "  Moving database to block device and starting database..."
+#db DATA_DIR do
+#  action [ :move_data_dir, :start ]
+#end
 
 log "  Setting state of database to be 'initialized'..."
 db_init_status :set
-
-db DATA_DIR do
-  #action [ :move_data_dir, :start ]
-  log " Starting up service later"
-  action [  :start ]
-end
 
 log "  Registering as master..."
 #db_register_master
