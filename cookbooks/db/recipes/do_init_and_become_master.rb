@@ -28,31 +28,24 @@ end
 
 log "  Moving database to block device and starting database..."
 db DATA_DIR do
-  #action [ :move_data_dir, :start ]
-  action [ :move_data_dir ]
+  action [ :move_data_dir, :start ]
 end
 
 log "  Setting state of database to be 'initialized'..."
 db_init_status :set
 
-log " Starting up service later"
-db DATA_DIR do
-  #action [ :move_data_dir, :start ]
-  action [  :start ]
-end
-
 log "  Registering as master..."
-#db_register_master
+db_register_master
 
 log "  Adding replication privileges for this master database..."
-#include_recipe "db::setup_replication_privileges"
+include_recipe "db::setup_replication_privileges"
 
 log "  Forcing a backup so slaves can init from this master..."
-#db_do_backup "do force backup" do
-#  force true
-#end
+db_do_backup "do force backup" do
+  force true
+end
 
 log "  Setting up cron to do scheduled backups..."
-#include_recipe "db::do_backup_schedule_enable"
+include_recipe "db::do_primary_backup_schedule_enable"
 
 rs_utils_marker :end
