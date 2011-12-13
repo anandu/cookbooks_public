@@ -63,10 +63,10 @@ log "  Resetting the database..."
 #end
 
 #log "  Resetting database, then starting database..."
-#db DATA_DIR do
+db DATA_DIR do
 #  action [ :reset, :start ]
    action [ :start ]
-#end
+end
 
 log "  Setting database state to 'uninitialized'..."
 db_init_status :reset
