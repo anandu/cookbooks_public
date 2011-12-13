@@ -9,11 +9,11 @@ rs_utils_marker :begin
 
 DATA_DIR = node[:db][:data_dir]
 
-log "  Verify if database state is 'uninitialized'..."
-db_init_status :check do
-  expected_state :uninitialized
-  error_message "Database already initialized.  To over write existing database run do_force_reset before this recipe"
-end
+#log "  Verify if database state is 'uninitialized'..."
+#db_init_status :check do
+#  expected_state :uninitialized
+#  error_message "Database already initialized.  To over write existing database run do_force_reset before this recipe"
+#end
 
 log "  Stopping database..."
 db DATA_DIR do
