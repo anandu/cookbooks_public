@@ -299,6 +299,23 @@ action :install_server do
     
 end
 
+action :grant_replication_slave do
+  require 'rubygems'
+  Gem.clear_paths
+  require 'pg'
+  admin_role = node[:db_postgres][:admin_role]
+
+  Chef::Log.info "GRANT REPLICATION SLAVE to #{node[:db][:replication][:user]}"
+  # Opening connection for pg operation
+  conn = PGconn.open("localhost", nil, nil, nil, nil, "postgres", nil)
+
+  # Enable admin/replication user
+  conn.exec("CREATE USER #{node[:db][:replication][:user]} ENCRYPTED PASSWORD '#{node[:db][:replication][:password]}'")
+  # Grant role previleges to admin/replication user
+  conn.exec("GRANT #{admin_role} TO #{node[:db][:replication][:user]}")
+  conn.close
+end
+
 action :setup_monitoring do
   service "collectd" do
     action :nothing

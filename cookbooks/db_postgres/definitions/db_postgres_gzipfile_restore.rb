@@ -1,5 +1,5 @@
-# Cookbook Name:: app_php
-# Recipe:: setup_db_connection
+# Cookbook Name:: db_postgres
+# Recipe: db_postgres_gzipfile_restore
 #
 # Copyright (c) 2011 RightScale Inc
 #
@@ -22,34 +22,13 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-rs_utils_marker :begin
-
-# == Setup PHP Database Connection
-#
-# Make sure config dir exists
-directory File.join(node[:web_apache][:docroot], "config") do
-  recursive true 
-  owner node[:php][:app_user]
-  group node[:php][:app_user]
+define :db_postgres_gzipfile_restore, :db_name => nil, :file_path => nil do
+  bash "(Over)Write #{params[:db_name]} db with data from the backup" do
+  user 'postgres'
+    code <<-EOF
+      dropdb -h /var/run/postgresql -U postgres #{params[:db_name]}
+      createdb -h /var/run/postgresql -U postgres #{params[:db_name]}
+      gunzip -c #{params[:file_path]} | psql -h /var/run/postgresql -U postgres #{params[:db_name]}  
+    EOF
+  end
 end
-
-# Tell MySQL to fill in our connection template
-db_mysql_connect_app File.join(node[:web_apache][:docroot], "config", "db.php") do
-  template "db.php.erb"
-  cookbook "app_php"
-  database node[:php][:db_schema_name]
-  owner node[:php][:app_user]
-  group node[:php][:app_user]
-end
-
-# Tell PostgreSQL to fill in our connection template
-db_postgres_connect_app File.join(node[:web_apache][:docroot], "config", "db.php") do
-  template "db.php.erb"
-  cookbook "app_php"
-  database node[:php][:db_schema_name]
-  owner node[:php][:app_user]
-  group node[:php][:app_user]
-end
-
-
-rs_utils_marker :end

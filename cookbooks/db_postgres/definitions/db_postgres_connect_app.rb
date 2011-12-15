@@ -1,5 +1,6 @@
-# Cookbook Name:: app_php
-# Recipe:: setup_db_connection
+#
+# Cookbook Name:: db_postgres
+# Definition:: db_postgres_connect_app
 #
 # Copyright (c) 2011 RightScale Inc
 #
@@ -22,34 +23,22 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-rs_utils_marker :begin
+define :db_postgres_connect_app, :template => "db_connection_example.erb", :cookbook => "db_postgres", :database => nil do
+  
+  template params[:name] do
+    source params[:template]
+    cookbook params[:cookbook]
+    mode 0440
+    owner params[:owner]
+    group params[:group]
+    backup false
+    variables(
+      :user => node[:db][:application][:user],
+      :password => node[:db][:application][:password],
+      :fqdn => node[:db][:fqdn],
+      :socket => node[:db_postgres][:socket],
+      :database => params[:database]
+    )
+  end
 
-# == Setup PHP Database Connection
-#
-# Make sure config dir exists
-directory File.join(node[:web_apache][:docroot], "config") do
-  recursive true 
-  owner node[:php][:app_user]
-  group node[:php][:app_user]
 end
-
-# Tell MySQL to fill in our connection template
-db_mysql_connect_app File.join(node[:web_apache][:docroot], "config", "db.php") do
-  template "db.php.erb"
-  cookbook "app_php"
-  database node[:php][:db_schema_name]
-  owner node[:php][:app_user]
-  group node[:php][:app_user]
-end
-
-# Tell PostgreSQL to fill in our connection template
-db_postgres_connect_app File.join(node[:web_apache][:docroot], "config", "db.php") do
-  template "db.php.erb"
-  cookbook "app_php"
-  database node[:php][:db_schema_name]
-  owner node[:php][:app_user]
-  group node[:php][:app_user]
-end
-
-
-rs_utils_marker :end

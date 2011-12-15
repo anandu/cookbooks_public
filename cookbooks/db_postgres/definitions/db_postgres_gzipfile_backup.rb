@@ -1,5 +1,5 @@
-# Cookbook Name:: app_php
-# Recipe:: setup_db_connection
+# Cookbook Name:: db_postgres
+# Recipe: db_postgres_gzipfile_backup
 #
 # Copyright (c) 2011 RightScale Inc
 #
@@ -22,34 +22,12 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-rs_utils_marker :begin
 
-# == Setup PHP Database Connection
-#
-# Make sure config dir exists
-directory File.join(node[:web_apache][:docroot], "config") do
-  recursive true 
-  owner node[:php][:app_user]
-  group node[:php][:app_user]
+define :db_postgres_gzipfile_backup, :db_name => nil, :file_path => "/tmp/postgres_backup.gz" do
+  bash "Write the postgres DB backup file" do
+    user 'postgres'
+	code <<-EOH
+        pg_dump -h /var/run/postgresql -U postgres #{params[:db_name]} | gzip -c > #{params[:file_path]}
+	EOH
+  end
 end
-
-# Tell MySQL to fill in our connection template
-db_mysql_connect_app File.join(node[:web_apache][:docroot], "config", "db.php") do
-  template "db.php.erb"
-  cookbook "app_php"
-  database node[:php][:db_schema_name]
-  owner node[:php][:app_user]
-  group node[:php][:app_user]
-end
-
-# Tell PostgreSQL to fill in our connection template
-db_postgres_connect_app File.join(node[:web_apache][:docroot], "config", "db.php") do
-  template "db.php.erb"
-  cookbook "app_php"
-  database node[:php][:db_schema_name]
-  owner node[:php][:app_user]
-  group node[:php][:app_user]
-end
-
-
-rs_utils_marker :end
