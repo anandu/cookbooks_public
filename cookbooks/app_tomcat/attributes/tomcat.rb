@@ -35,8 +35,7 @@ when "centos","fedora","suse","redhat"
                                          "tomcat6",\
                                          "tomcat6-admin-webapps",\
                                          "tomcat6-webapps",\
-                                         "tomcat-native",\
-                                         "postgresql-9.1-901.jdbc4"]
+                                         "tomcat-native"]
   end
   set[:tomcat][:module_dependencies] = [ "proxy", "proxy_http" ]
   set_unless[:tomcat][:app_user] = "tomcat"
