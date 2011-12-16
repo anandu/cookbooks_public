@@ -1,6 +1,6 @@
 # Cookbook Name:: app_rails
 #
-# Copyright 2009, RightScale, Inc.
+# Copyright 2011, RightScale, Inc.
 #
 # All rights reserved - Do Not Redistribute
 #

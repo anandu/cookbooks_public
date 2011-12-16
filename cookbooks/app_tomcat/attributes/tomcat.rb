@@ -18,12 +18,12 @@ set[:tomcat][:docroot] = "/srv/tomcat6/webapps"
 
 case platform
 when "ubuntu", "debian"
-  if("#{tomcat[:db_adapter]}" = "mysql")
+  if(tomcat[:db_adapter] == "mysql")
     set[:db_mysql][:socket] = "/var/run/mysqld/mysqld.sock"
   else
     set[:db_postgres][:socket] = "/var/run/postgresql"
 when "centos","fedora","suse","redhat"
-  if("#{tomcat[:db_adapter]}" = "mysql")
+  if(tomcat[:db_adapter] == "mysql")
     set[:tomcat][:package_dependencies] = ["eclipse-ecj",\
                                          "tomcat6",\
                                          "tomcat6-admin-webapps",\
@@ -40,7 +40,7 @@ when "centos","fedora","suse","redhat"
   end
   set[:tomcat][:module_dependencies] = [ "proxy", "proxy_http" ]
   set_unless[:tomcat][:app_user] = "tomcat"
-  if("#{tomcat[:db_adapter]}" = "mysql")
+  if(tomcat[:db_adapter] == "mysql")
     set[:tomcat][:socket] = "/var/lib/mysql/mysql.sock"
   else
     set[:tomcat][:socket] = "/var/run/postgresql"
