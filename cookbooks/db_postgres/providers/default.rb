@@ -303,7 +303,7 @@ action :grant_replication_slave do
   require 'rubygems'
   Gem.clear_paths
   require 'pg'
-  admin_role = node[:db_postgres][:admin_role]
+  # admin_role = node[:db_postgres][:admin_role]
 
   Chef::Log.info "GRANT REPLICATION SLAVE to #{node[:db][:replication][:user]}"
   # Opening connection for pg operation
