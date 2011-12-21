@@ -342,7 +342,7 @@ action :enable_replication do
   # template_source = "postgresql.conf.erb"
 
   template value_for_platform([ "centos", "redhat", "suse" ] => {"default" => "#{node[:db_postgres][:confdir]}/postgresql.conf"}, "default" => "#{node[:db_postgres][:confdir]}/postgresql.conf") do
-    source "postgresql.conf.slave.erb"
+    source "postgresql.conf.erb"
     owner "postgres"
     group "postgres"
     mode "0644"
