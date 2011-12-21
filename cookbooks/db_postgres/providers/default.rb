@@ -77,19 +77,19 @@ action :firewall_update do
 end
 
 action :write_backup_info do
- # masterstatus = Hash.new
- # masterstatus = RightScale::Database::PostgreSQL::Helper.do_query(node, 'select version()')
- # masterstatus['Master_IP'] = node[:db][:current_master_ip]
- # masterstatus['Master_instance_uuid'] = node[:db][:current_master_uuid]
- # slavestatus = RightScale::Database::PostgreSQL::Helper.do_query(node, 'SHOW SLAVE STATUS')
- # slavestatus ||= Hash.new
- # if node[:db][:this_is_master]
+  masterstatus = Hash.new
+  masterstatus = RightScale::Database::PostgreSQL::Helper.do_query(node, 'select version()')
+  masterstatus['Master_IP'] = node[:db][:current_master_ip]
+  masterstatus['Master_instance_uuid'] = node[:db][:current_master_uuid]
+  slavestatus = RightScale::Database::PostgreSQL::Helper.do_query(node, 'SHOW SLAVE STATUS')
+  slavestatus ||= Hash.new
+  if node[:db][:this_is_master]
     Chef::Log.info "Backing up Master info"
- # else
- #   Chef::Log.info "Backing up slave replication status"
-#    masterstatus['File'] = slavestatus['Relay_Master_Log_File']
-#    masterstatus['Position'] = slavestatus['Exec_Master_Log_Pos']
- # end
+  else
+    Chef::Log.info "Backing up slave replication status"
+    masterstatus['File'] = slavestatus['Relay_Master_Log_File']
+    masterstatus['Position'] = slavestatus['Exec_Master_Log_Pos']
+  end
   Chef::Log.info "Saving master info...:\n#{masterstatus.to_yaml}"
   ::File.open(::File.join(node[:db][:data_dir], RightScale::Database::PostgreSQL::Helper::SNAPSHOT_POSITION_FILENAME), ::File::CREAT|::File::TRUNC|::File::RDWR) do |out|
     YAML.dump(masterstatus, out)
@@ -314,6 +314,92 @@ action :grant_replication_slave do
   # Grant role previleges to admin/replication user
   # conn.exec("GRANT #{admin_role} TO #{node[:db][:replication][:user]}")
   conn.close
+end
+
+action :enable_replication do
+
+  ruby_block "wipe_existing_runtime_config" do
+    block do
+      Chef::Log.info "Wiping existing runtime config files"
+      #data_dir = ::File.join(node[:db][:data_dir], 'mysql')
+      data_dir = ::File.join(node[:db][:data_dir])
+      files_to_delete = [ "postmaster.pid","pg_xlog/*"]
+      files_to_delete.each do |file|
+        expand = Dir.glob(::File.join(data_dir,file))
+        unless expand.empty?
+        	expand.each do |exp_file|
+        	  FileUtils.rm_rf(exp_file)
+        	end
+        end
+      end
+    end
+  end
+
+  # disable binary logging  # Mysql specific
+  # node[:db_mysql][:log_bin_enabled] = false  # Mysql specific
+
+  # Setup postgresql.conf
+  # template_source = "postgresql.conf.erb"
+
+  template value_for_platform([ "centos", "redhat", "suse" ] => {"default" => "#{node[:db_postgres][:confdir]}/postgresql.conf"}, "default" => "#{node[:db_postgres][:confdir]}/postgresql.conf") do
+    source "postgresql.conf.slave.erb"
+    owner "postgres"
+    group "postgres"
+    mode "0644"
+    cookbook 'db_postgres'
+  end
+
+  # Setup pg_hba.conf
+  # pg_hba_source = "pg_hba.conf.erb"
+
+  template value_for_platform([ "centos", "redhat", "suse" ] => {"default" => "#{node[:db_postgres][:confdir]}/pg_hba.conf"}, "default" => "#{node[:db_postgres][:confdir]}/pg_hba.conf") do
+    source "pg_hba.conf.erb"
+    owner "postgres"
+    group "postgres"
+    mode "0644"
+    cookbook 'db_postgres'
+  end
+
+  # == Setup PostgreSQL user limits
+  #
+  # Set the postgres and root users max open files to a really large number.
+  # 1/3 of the overall system file max should be large enough.  The percentage can be
+  # adjusted if necessary.
+  #
+  postgres_file_ulimit = `sysctl -n fs.file-max`.to_i/33
+
+  template "/etc/security/limits.d/postgres.limits.conf" do
+    source "postgres.limits.conf.erb"
+    variables({
+      :ulimit => postgres_file_ulimit
+    })
+    cookbook 'db_postgres'
+  end
+
+  # Change root's limitations for THIS shell.  The entry in the limits.d will be
+  # used for future logins.
+  # The setting needs to be in place before postgresql-9 is started.
+  #
+  execute "ulimit -n #{postgres_file_ulimit}"
+
+
+  # Create the Socket directory
+  # directory "/var/run/postgresql" do
+  directory "#{node[:db_postgres][:socket]}" do
+    owner "postgres"
+    group "postgres"
+    mode 0770
+    recursive true
+  end
+
+  # ensure_db_started
+  # service provider uses the status command to decide if it
+  # has to run the start command again.
+  10.times do
+    service "postgresql-9.1" do
+      action :start
+    end
+  end
 end
 
 action :setup_monitoring do
