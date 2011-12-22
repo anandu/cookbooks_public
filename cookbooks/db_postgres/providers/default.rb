@@ -77,18 +77,11 @@ action :firewall_update do
 end
 
 action :write_backup_info do
-  masterstatus = Hash.new
-  masterstatus = RightScale::Database::PostgreSQL::Helper.do_query(node, 'select version()')
-  masterstatus['Master_IP'] = node[:db][:current_master_ip]
-  masterstatus['Master_instance_uuid'] = node[:db][:current_master_uuid]
-  slavestatus = RightScale::Database::PostgreSQL::Helper.do_query(node, 'SHOW SLAVE STATUS')
-  slavestatus ||= Hash.new
+   masterstatus = node[:db][:current_master_ip]
   if node[:db][:this_is_master]
-    Chef::Log.info "Backing up Master info"
+   Chef::Log.info "Backing up Master info"
   else
     Chef::Log.info "Backing up slave replication status"
-    masterstatus['File'] = slavestatus['Relay_Master_Log_File']
-    masterstatus['Position'] = slavestatus['Exec_Master_Log_Pos']
   end
   Chef::Log.info "Saving master info...:\n#{masterstatus.to_yaml}"
   ::File.open(::File.join(node[:db][:data_dir], RightScale::Database::PostgreSQL::Helper::SNAPSHOT_POSITION_FILENAME), ::File::CREAT|::File::TRUNC|::File::RDWR) do |out|
@@ -245,6 +238,13 @@ action :install_server do
     recursive true
   end
 
+  # Create the Archive directory
+  directory "#{node[:db_postgres][:confdir]}/archive " do
+    owner "postgres"
+    group "postgres"
+    mode 0770
+    recursive true
+  end
 
   # Setup postgresql.conf
   # template_source = "postgresql.conf.erb"
@@ -303,17 +303,19 @@ action :grant_replication_slave do
   require 'rubygems'
   Gem.clear_paths
   require 'pg'
-  # admin_role = node[:db_postgres][:admin_role]
-
+  
   Chef::Log.info "GRANT REPLICATION SLAVE to #{node[:db][:replication][:user]}"
   # Opening connection for pg operation
   conn = PGconn.open("localhost", nil, nil, nil, nil, "postgres", nil)
-
+  
   # Enable admin/replication user
   conn.exec("CREATE USER #{node[:db][:replication][:user]} SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN ENCRYPTED PASSWORD '#{node[:db][:replication][:password]}'")
-  # Grant role previleges to admin/replication user
-  # conn.exec("GRANT #{admin_role} TO #{node[:db][:replication][:user]}")
   conn.close
+  # Setup pg_hba.conf for replication user allow
+  RightScale::Database::PostgreSQL::Helper.configure_pg_hba(node)
+
+  # Reload postgresql to read new updated pg_hba.conf
+   RightScale::Database::PostgreSQL::Helper.do_query('select pg_reload_conf()')
 end
 
 action :enable_replication do
@@ -399,6 +401,59 @@ action :enable_replication do
     service "postgresql-9.1" do
       action :start
     end
+  end
+end
+
+action :promote do
+  # stopping postgresql
+  action_stop
+  
+  # Setup postgresql.conf
+  template "#{node[:db_postgres][:confdir]}/postgresql.conf" do
+    source "postgresql.conf.erb"
+    owner "postgres"
+    group "postgres"
+    mode "0644"
+    cookbook 'db_postgres'
+  end
+
+  # Setup pg_hba.conf
+  template "#{node[:db_postgres][:confdir]}/pg_hba.conf" do
+    source "pg_hba.conf.erb"
+    owner "postgres"
+    group "postgres"
+    mode "0644"
+    cookbook 'db_postgres'
+  end
+
+  previous_master = node[:db][:current_master_ip]
+  raise "FATAL: could not determine master host from slave status" if previous_master.nil?
+  Chef::Log.info "host: #{previous_master}}"
+  
+  # PHASE1: contains non-critical old master operations, if a timeout or
+  # error occurs we continue promotion assuming the old master is dead.
+
+  begin
+  # Critical operations on newmaster, if a failure occurs here we allow it to halt promote operations
+  # <Ravi - Do your stuff here> 
+
+  ### INITIAL CHECKS 
+  # Perform an initial connection forcing to accept the keys...to avoid interaction.
+    @db = init(new_resource)
+    @db.accept_ssh_key("localhost")
+
+  # Ensure that that the newmaster DB is up
+    action_start
+  
+  # Promote the slave into the new master  
+    Chef::Log.info "Promoting slave.."
+    @db.write_trigger()
+  
+  # Let the new slave loose and thus let him become the new master
+    Chef::Log.info  "New master is ReadWrite."
+    
+  rescue => e
+    Chef::Log.info "WARNING: caught exception #{e} during critical operations on the MASTER"
   end
 end
 
