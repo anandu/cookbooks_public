@@ -318,88 +318,49 @@ action :grant_replication_slave do
    RightScale::Database::PostgreSQL::Helper.do_query('select pg_reload_conf()')
 end
 
-action :enable_replication do
+ction :enable_replication do
 
-  ruby_block "wipe_existing_runtime_config" do
-    block do
-      Chef::Log.info "Wiping existing runtime config files"
-      #data_dir = ::File.join(node[:db][:data_dir], 'mysql')
-      data_dir = ::File.join(node[:db][:data_dir])
-      files_to_delete = [ "postmaster.pid","pg_xlog/*"]
-      files_to_delete.each do |file|
-        expand = Dir.glob(::File.join(data_dir,file))
-        unless expand.empty?
-        	expand.each do |exp_file|
-        	  FileUtils.rm_rf(exp_file)
-        	end
+# Sync to Master data
+@db.rsync_db
+
+# Setup recovery conf
+@db.reconfigure_replication_info(newmaster_host)
+
+service "postgresql-9.1" do
+    action :stop
+end
+ruby_block "wipe_existing_runtime_config" do
+  block do
+    Chef::Log.info "Wiping existing runtime config files"
+    data_dir = ::File.join(node[:db][:data_dir], 'pg_xlog')
+    files_to_delete = [ "*"]
+    files_to_delete.each do |file|
+      expand = Dir.glob(::File.join(data_dir,file))
+      unless expand.empty?
+        expand.each do |exp_file|
+          FileUtils.rm_rf(exp_file)
         end
       end
     end
   end
+end
 
-  # disable binary logging  # Mysql specific
-  # node[:db_mysql][:log_bin_enabled] = false  # Mysql specific
-
-  # Setup postgresql.conf
-  # template_source = "postgresql.conf.erb"
-
-  template value_for_platform([ "centos", "redhat", "suse" ] => {"default" => "#{node[:db_postgres][:confdir]}/postgresql.conf"}, "default" => "#{node[:db_postgres][:confdir]}/postgresql.conf") do
-    source "postgresql.conf.erb"
-    owner "postgres"
-    group "postgres"
-    mode "0644"
-    cookbook 'db_postgres'
+# ensure_db_started
+# service provider uses the status command to decide if it
+# has to run the start command again.
+10.times do
+  service "postgresql-9.1" do
+    action :start
   end
+end
 
-  # Setup pg_hba.conf
-  # pg_hba_source = "pg_hba.conf.erb"
-
-  template value_for_platform([ "centos", "redhat", "suse" ] => {"default" => "#{node[:db_postgres][:confdir]}/pg_hba.conf"}, "default" => "#{node[:db_postgres][:confdir]}/pg_hba.conf") do
-    source "pg_hba.conf.erb"
-    owner "postgres"
-    group "postgres"
-    mode "0644"
-    cookbook 'db_postgres'
-  end
-
-  # == Setup PostgreSQL user limits
-  #
-  # Set the postgres and root users max open files to a really large number.
-  # 1/3 of the overall system file max should be large enough.  The percentage can be
-  # adjusted if necessary.
-  #
-  postgres_file_ulimit = `sysctl -n fs.file-max`.to_i/33
-
-  template "/etc/security/limits.d/postgres.limits.conf" do
-    source "postgres.limits.conf.erb"
-    variables({
-      :ulimit => postgres_file_ulimit
-    })
-    cookbook 'db_postgres'
-  end
-
-  # Change root's limitations for THIS shell.  The entry in the limits.d will be
-  # used for future logins.
-  # The setting needs to be in place before postgresql-9 is started.
-  #
-  execute "ulimit -n #{postgres_file_ulimit}"
-
-
-  # Create the Socket directory
-  # directory "/var/run/postgresql" do
-  directory "#{node[:db_postgres][:socket]}" do
-    owner "postgres"
-    group "postgres"
-    mode 0770
-    recursive true
-  end
-
-  # ensure_db_started
-  # service provider uses the status command to decide if it
-  # has to run the start command again.
-  10.times do
-    service "postgresql-9.1" do
-      action :start
+  ruby_block "validate_backup" do
+  block do
+    master_info = RightScale::Database::PostgreSQL::Helper.load_replication_info(node)
+    raise "Position and file not saved!" unless master_info['Master_instance_uuid']
+    # Check that the snapshot is from the current master or a slave associated with the current master
+    if master_info['Master_instance_uuid'] != node[:db][:current_master_uuid]
+      raise "FATAL: snapshot was taken from a different master! snap_master was:#{master_info['Master_instance_uuid']} != current master: #{node[:db][:current_master_uuid]}"
     end
   end
 end
