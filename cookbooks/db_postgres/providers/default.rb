@@ -356,15 +356,17 @@ end
 end
 
   ruby_block "validate_backup" do
-  block do
-    master_info = RightScale::Database::PostgreSQL::Helper.load_replication_info(node)
-    raise "Position and file not saved!" unless master_info['Master_instance_uuid']
-    # Check that the snapshot is from the current master or a slave associated with the current master
-    if master_info['Master_instance_uuid'] != node[:db][:current_master_uuid]
-      raise "FATAL: snapshot was taken from a different master! snap_master was:#{master_info['Master_instance_uuid']} != current master: #{node[:db][:current_master_uuid]}"
-    end
-  end
+    block do
+      master_info = RightScale::Database::PostgreSQL::Helper.load_replication_info(node)
+      raise "Position and file not saved!" unless master_info['Master_instance_uuid']
+      # Check that the snapshot is from the current master or a slave associated with the current master
+        if master_info['Master_instance_uuid'] != node[:db][:current_master_uuid]
+        raise "FATAL: snapshot was taken from a different master! snap_master was:#{master_info['Master_instance_uuid']} != current master: #{node[:db][:current_master_uuid]}"
+        end
+      end
+   end
 end
+
 
 action :promote do
   # stopping postgresql
