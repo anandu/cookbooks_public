@@ -318,7 +318,7 @@ action :grant_replication_slave do
    RightScale::Database::PostgreSQL::Helper.do_query('select pg_reload_conf()')
 end
 
-ction :enable_replication do
+action :enable_replication do
 
 # Sync to Master data
 @db.rsync_db
@@ -329,6 +329,7 @@ ction :enable_replication do
 service "postgresql-9.1" do
     action :stop
 end
+
 ruby_block "wipe_existing_runtime_config" do
   block do
     Chef::Log.info "Wiping existing runtime config files"
@@ -336,14 +337,14 @@ ruby_block "wipe_existing_runtime_config" do
     files_to_delete = [ "*"]
     files_to_delete.each do |file|
       expand = Dir.glob(::File.join(data_dir,file))
-      unless expand.empty?
+      #unless expand.empty?
         expand.each do |exp_file|
           FileUtils.rm_rf(exp_file)
         end
       end
     end
   end
-end
+#end
 
 # ensure_db_started
 # service provider uses the status command to decide if it
@@ -499,7 +500,7 @@ action :restore_from_dump_file do
     end
   end
 
-  bash "Import MySQL dump file: #{dumpfile}" do
+  bash "Import PostgreSQL dump file: #{dumpfile}" do
     user "postgres"
     code <<-EOH
       set -e
