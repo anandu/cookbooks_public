@@ -337,14 +337,14 @@ ruby_block "wipe_existing_runtime_config" do
     files_to_delete = [ "*"]
     files_to_delete.each do |file|
       expand = Dir.glob(::File.join(data_dir,file))
-      #unless expand.empty?
+      unless expand.empty?
         expand.each do |exp_file|
           FileUtils.rm_rf(exp_file)
         end
       end
     end
   end
-#end
+end
 
 # ensure_db_started
 # service provider uses the status command to decide if it
