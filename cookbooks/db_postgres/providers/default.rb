@@ -320,15 +320,16 @@ end
 
 action :enable_replication do
 
+newmaster = node[:db][:current_master_ip]
 # Sync to Master data
 @db.rsync_db(newmaster)
 
 # Setup recovery conf
 @db.reconfigure_replication_info(newmaster)
 
-service "postgresql-9.1" do
-    action :stop
-end
+# Stoping Postgresql service
+action_stop
+
 
 ruby_block "wipe_existing_runtime_config" do
   block do
@@ -349,10 +350,8 @@ end
 # ensure_db_started
 # service provider uses the status command to decide if it
 # has to run the start command again.
-10.times do
-  service "postgresql-9.1" do
-    action :start
-  end
+5.times do
+    action_start
 end
 
   ruby_block "validate_backup" do
