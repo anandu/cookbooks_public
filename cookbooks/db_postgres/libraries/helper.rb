@@ -107,13 +107,13 @@ module RightScale
         # Reconfigure the replication parameters.
         def self.reconfigure_replication_info(newmaster_host)
           File.open("/var/lib/pgsql/9.1/data/recovery.conf", File::CREAT|File::TRUNC|File::RDWR) do |f|
-            f.puts("standby_mode='on'\nprimary_conninfo='host=#{newmaster_host} user=#{rep_user} password=#{rep_pass}'\ntrigger_file='/var/lib/pgsql/9.1/data/recovery.trigger'")
+            f.puts("standby_mode='on'\nprimary_conninfo='host=#{newmaster_host} user=#{node[:db][:replication][:user] password=#{rep_pass}'\ntrigger_file='/var/lib/pgsql/9.1/data/recovery.trigger'")
           end
           return $? == 0
         end
 
         def self.rsync_db(newmaster_host)
-          puts `su - postgres -c "env PGCONNECT_TIMEOUT=30 /usr/pgsql-9.1/bin/pg_basebackup -D /var/lib/pgsql/9.1/backups -U #{rep_user} -h #{newmaster_host}"`
+          puts `su - postgres -c "env PGCONNECT_TIMEOUT=30 /usr/pgsql-9.1/bin/pg_basebackup -D /var/lib/pgsql/9.1/backups -U #{node[:db][:replication][:user] -h #{newmaster_host}"`
           puts `su - postgres -c "rsync -av /var/lib/pgsql/9.1/backups/ /var/lib/pgsql/9.1/data --exclude postgresql.conf --exclude pg_hba.conf"`
           return $? == 0
         end
