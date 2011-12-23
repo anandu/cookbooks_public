@@ -29,8 +29,6 @@ db node[:db][:data_dir] do
   action :promote
 end
 
-include_recipe "db::setup_replication_privileges"
-
 # == Schedule backups on slave
 # This should be done before calling db::do_lookup_master 
 # changes current_master from old to new. 
