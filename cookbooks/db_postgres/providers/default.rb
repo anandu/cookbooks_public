@@ -340,13 +340,11 @@ RightScale::Database::PostgreSQL::Helper.rsync_db(newmaster_host, rep_user)
 RightScale::Database::PostgreSQL::Helper.reconfigure_replication_info(newmaster_host, rep_user, rep_pass)
 
 
-  ruby_block "wipe_existing_runtime_config" do
-    block do
-      Chef::Log.info "Wiping existing runtime config files"
-      require 'fileutils'
-      Dir.glob(::File.join(node[:db][:datadir], 'pg_xlog', '**' )).each {|dir| FileUtils.rm_rf(dir) }
-      end
-  end
+
+ Chef::Log.info "Wiping existing runtime config files"
+ require 'fileutils'
+ Dir.glob(::File.join(node[:db][:datadir], 'pg_xlog', '**' )).each {|dir| FileUtils.rm_rf(dir) }
+
 
 
 # ensure_db_started
