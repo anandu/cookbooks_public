@@ -23,20 +23,22 @@ end
 # == Promote to master
 # Do promote, but do not change master tags or node state yet.
 #
-include_recipe "db::setup_replication_privileges"
+# include_recipe "db::setup_replication_privileges"
 
 db node[:db][:data_dir] do
   action :promote
 end
 
+include_recipe "db::setup_replication_privileges"
+
 # == Schedule backups on slave
 # This should be done before calling db::do_lookup_master 
 # changes current_master from old to new. 
 # 
-remote_recipe "enable slave backups on oldmaster" do
-  recipe "db::do_backup_schedule_enable"
-  recipients_tags "rs_dbrepl:master_instance_uuid=#{node[:db][:current_master_uuid]}"
-end
+#remote_recipe "enable slave backups on oldmaster" do
+#  recipe "db::do_backup_schedule_enable"
+#  recipients_tags "rs_dbrepl:master_instance_uuid=#{node[:db][:current_master_uuid]}"
+#end
 
 # == Demote old master
 #
