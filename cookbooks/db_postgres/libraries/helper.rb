@@ -70,7 +70,7 @@ module RightScale
           return conn
         end
 
-        def self.do_query(query, hostname = 'localhost', username = 'postgres', timeout = nil, tries = 1)
+        def self.do_query(node, query, hostname = 'localhost', username = 'postgres', timeout = nil, tries = 1)
           require 'rubygems'
           Gem.clear_paths
           require 'pg'
