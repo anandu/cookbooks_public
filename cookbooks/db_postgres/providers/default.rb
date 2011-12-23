@@ -239,7 +239,7 @@ action :install_server do
   end
 
   # Create the Archive directory
-  directory "#{node[:db_postgres][:confdir]}/archive " do
+  directory "#{node[:db_postgres][:confdir]}/archive" do
     owner "postgres"
     group "postgres"
     mode 0770
