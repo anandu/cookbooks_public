@@ -101,8 +101,8 @@ module RightScale
           end
         end
 
-	rep_user = node[:db][:replication][:user]
-	rep_pass = node[:db][:replication][:password]
+	rep_user ='#{node[:db][:replication][:user]}'
+	rep_pass ='#{node[:db][:replication][:password]}'
 
         # Reconfigure the replication parameters.
         def self.reconfigure_replication_info(newmaster_host)
