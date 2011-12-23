@@ -320,12 +320,22 @@ end
 
 action :enable_replication do
 
-newmaster = node[:db][:current_master_ip]
+newmaster_host = node[:db][:current_master_ip]
+rep_user = node[:db][:replication][:user]
+rep_pass = node[:db][:replication][:password]
+
+
+master_info = RightScale::Database::PostgreSQL::Helper.load_replication_info(node)
+
+
 # Sync to Master data
-RightScale::Database::PostgreSQL::Helper.rsync_db(newmaster)
+#@db.rsync_db(newmaster_host)
+# RightScale::Database::PostgreSQL::Helper.rsync_db(newmaster_host, rep_user)
+
 
 # Setup recovery conf
-RightScale::Database::PostgreSQL::Helper.reconfigure_replication_info(newmaster)
+#@db.reconfigure_replication_info(newmaster)
+RightScale::Database::PostgreSQL::Helper.reconfigure_replication_info(newmaster_host, rep_user, rep_pass)
 
 # Stoping Postgresql service
 action_stop
