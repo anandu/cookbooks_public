@@ -16,23 +16,28 @@ DATA_DIR = node[:db][:data_dir]
 #end
 
 log "  Stopping database..."
-db DATA_DIR do
-  action :stop
-end
+#db DATA_DIR do
+#  action :stop
+#end
 
 log "  Creating block device..."
-block_device DATA_DIR do
-  lineage node[:db][:backup][:lineage]
-  action :create
-end
+#block_device DATA_DIR do
+#  lineage node[:db][:backup][:lineage]
+#  action :create
+#end
 
 log "  Moving database to block device and starting database..."
+#db DATA_DIR do
+#  action [ :move_data_dir, :start ]
+#end
+
+#Dev code init slave , to check replication
 db DATA_DIR do
-  action [ :move_data_dir, :start ]
+  action :enable_replication
 end
 
 log "  Setting state of database to be 'initialized'..."
-db_init_status :set
+#db_init_status :set
 
 # Following feature are removed from the recipe to enable it for stand-alone mode
 #log "  Registering as master..."
