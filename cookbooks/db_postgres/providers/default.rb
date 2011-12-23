@@ -322,10 +322,10 @@ action :enable_replication do
 
 newmaster = node[:db][:current_master_ip]
 # Sync to Master data
-@db.rsync_db(newmaster)
+RightScale::Database::PostgreSQL::Helper.rsync_db(newmaster)
 
 # Setup recovery conf
-@db.reconfigure_replication_info(newmaster)
+RightScale::Database::PostgreSQL::Helper.reconfigure_replication_info(newmaster)
 
 # Stoping Postgresql service
 action_stop
