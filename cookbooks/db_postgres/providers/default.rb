@@ -77,9 +77,14 @@ action :firewall_update do
 end
 
 action :write_backup_info do
-   masterstatus = node[:db][:current_master_ip]
+  masterstatus = Hash.new
+  masterstatus = RightScale::Database::PostgreSQL::Helper.do_query(node, 'SELECT pg_current_xlog_location()')
+  masterstatus['Master_IP'] = node[:db][:current_master_ip]
+  masterstatus['Master_instance_uuid'] = node[:db][:current_master_uuid]
+  slavestatus = RightScale::Database::PostgreSQL::Helper.do_query(node, 'pg_last_xlog_receive_location')
+  slavestatus ||= Hash.new
   if node[:db][:this_is_master]
-   Chef::Log.info "Backing up Master info"
+    Chef::Log.info "Backing up Master info"
   else
     Chef::Log.info "Backing up slave replication status"
   end
