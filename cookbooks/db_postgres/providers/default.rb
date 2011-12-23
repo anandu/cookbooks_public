@@ -327,42 +327,35 @@ rep_pass = node[:db][:replication][:password]
 
 master_info = RightScale::Database::PostgreSQL::Helper.load_replication_info(node)
 
+# Stoping Postgresql service
+action_stop
 
 # Sync to Master data
 #@db.rsync_db(newmaster_host)
-# RightScale::Database::PostgreSQL::Helper.rsync_db(newmaster_host, rep_user)
+RightScale::Database::PostgreSQL::Helper.rsync_db(newmaster_host, rep_user)
 
 
 # Setup recovery conf
 #@db.reconfigure_replication_info(newmaster)
 RightScale::Database::PostgreSQL::Helper.reconfigure_replication_info(newmaster_host, rep_user, rep_pass)
 
-# Stoping Postgresql service
-action_stop
 
-
-ruby_block "wipe_existing_runtime_config" do
-  block do
-    Chef::Log.info "Wiping existing runtime config files"
-    data_dir = ::File.join(node[:db][:data_dir], 'pg_xlog')
-    files_to_delete = [ "*"]
-    files_to_delete.each do |file|
-      expand = Dir.glob(::File.join(data_dir,file))
-      unless expand.empty?
-        expand.each do |exp_file|
-          FileUtils.rm_rf(exp_file)
-        end
+  ruby_block "wipe_existing_runtime_config" do
+    block do
+      Chef::Log.info "Wiping existing runtime config files"
+      require 'fileutils'
+      remove_files = ::Dir.glob(::File.join(node[:db][:datadir], 'pg_xlog/*'))
+      FileUtils.rm_rf(remove_files)
       end
-    end
   end
-end
+
 
 # ensure_db_started
 # service provider uses the status command to decide if it
 # has to run the start command again.
-5.times do
-    action_start
-end
+  5.times do
+      action_start
+  end
 
   ruby_block "validate_backup" do
     block do
