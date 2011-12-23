@@ -321,10 +321,10 @@ end
 action :enable_replication do
 
 # Sync to Master data
-@db.rsync_db(newmaster_host)
+@db.rsync_db(newmaster)
 
 # Setup recovery conf
-@db.reconfigure_replication_info(newmaster_host)
+@db.reconfigure_replication_info(newmaster)
 
 service "postgresql-9.1" do
     action :stop
