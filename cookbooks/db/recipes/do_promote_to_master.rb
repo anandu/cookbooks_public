@@ -10,7 +10,7 @@ rs_utils_marker :begin
 # == Verify initalized database
 # Check the node state to verify that we have correctly initialized this server.
 #
-db_state_assert :slave
+#db_state_assert :slave
 
 # == Open port for slave replication by old-master
 #
