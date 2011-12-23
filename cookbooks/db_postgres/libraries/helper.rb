@@ -101,10 +101,13 @@ module RightScale
           end
         end
 
+	rep_user = node[:db][:replication][:user]
+	rep_pass = node[:db][:replication][:password]
+
         # Reconfigure the replication parameters.
         def self.reconfigure_replication_info(newmaster_host)
           File.open("/var/lib/pgsql/9.1/data/recovery.conf", File::CREAT|File::TRUNC|File::RDWR) do |f|
-            f.puts("standby_mode='on'\nprimary_conninfo='host=#{newmaster_host} user=#{@rep_user} password=#{@rep_pass}'\ntrigger_file='/var/lib/pgsql/9.1/data/recovery.trigger'")
+            f.puts("standby_mode='on'\nprimary_conninfo='host=#{newmaster_host} user=#{rep_user} password=#{rep_pass}'\ntrigger_file='/var/lib/pgsql/9.1/data/recovery.trigger'")
           end
           return $? == 0
         end
