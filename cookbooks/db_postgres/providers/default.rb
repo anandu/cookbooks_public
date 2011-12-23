@@ -344,8 +344,7 @@ RightScale::Database::PostgreSQL::Helper.reconfigure_replication_info(newmaster_
     block do
       Chef::Log.info "Wiping existing runtime config files"
       require 'fileutils'
-      remove_files = ::Dir.glob(::File.join(node[:db][:datadir], 'pg_xlog/*'))
-      FileUtils.rm_rf(remove_files)
+      Dir.glob(::File.join(node[:db][:datadir], 'pg_xlog', '**' )).each {|dir| FileUtils.rm_rf(dir) }
       end
   end
 
