@@ -321,7 +321,7 @@ end
 action :enable_replication do
 
 # Sync to Master data
-@db.rsync_db
+@db.rsync_db(newmaster_host)
 
 # Setup recovery conf
 @db.reconfigure_replication_info(newmaster_host)
