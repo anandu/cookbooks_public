@@ -342,8 +342,7 @@ RightScale::Database::PostgreSQL::Helper.reconfigure_replication_info(newmaster_
 
 
  Chef::Log.info "Wiping existing runtime config files"
- require 'fileutils'
- Dir.glob(::File.join(node[:db][:datadir], 'pg_xlog', '**' )).each {|dir| FileUtils.rm_rf(dir) }
+`rm -rf "#{node[:db][:datadir]}/pg_xlog/*"`
 
 
 
@@ -369,50 +368,21 @@ end
 
 
 action :promote do
-  # stopping postgresql
-  action_stop
-  
-  # Setup postgresql.conf
-  template "#{node[:db_postgres][:confdir]}/postgresql.conf" do
-    source "postgresql.conf.erb"
-    owner "postgres"
-    group "postgres"
-    mode "0644"
-    cookbook 'db_postgres'
-  end
-
-  # Setup pg_hba.conf
-  template "#{node[:db_postgres][:confdir]}/pg_hba.conf" do
-    source "pg_hba.conf.erb"
-    owner "postgres"
-    group "postgres"
-    mode "0644"
-    cookbook 'db_postgres'
-  end
 
   previous_master = node[:db][:current_master_ip]
-  raise "FATAL: could not determine master host from slave status" if previous_master.nil?
+  # raise "FATAL: could not determine master host from slave status" if previous_master.nil?
   Chef::Log.info "host: #{previous_master}}"
   
   # PHASE1: contains non-critical old master operations, if a timeout or
   # error occurs we continue promotion assuming the old master is dead.
 
   begin
-  # Critical operations on newmaster, if a failure occurs here we allow it to halt promote operations
-  # <Ravi - Do your stuff here> 
-
-  ### INITIAL CHECKS 
-  # Perform an initial connection forcing to accept the keys...to avoid interaction.
-    @db = init(new_resource)
-    @db.accept_ssh_key("localhost")
-
-  # Ensure that that the newmaster DB is up
-    action_start
   
   # Promote the slave into the new master  
     Chef::Log.info "Promoting slave.."
-    @db.write_trigger()
-  
+    RightScale::Database::PostgreSQL::Helper.write_trigger(node)
+    sleep 10
+
   # Let the new slave loose and thus let him become the new master
     Chef::Log.info  "New master is ReadWrite."
     
