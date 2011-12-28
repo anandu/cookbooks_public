@@ -10,7 +10,8 @@ depends "db"
 depends "rs_utils"
 depends "block_device"
 
-recipe  "db_postgres::default", "Runs the client 'db::install_server' recipes."
+recipe  "db_postgres::default", "Runs the client 'db::install_client' recipes."
+recipe  "db_postgres::setup_pgmaster", "Runs the client 'db_postgres::setup_pgmaster' recipe to setup master config for replication"
 
 attribute "db_postgres",
   :display_name => "General Database Options",
@@ -27,3 +28,9 @@ attribute "db_postgres/server_usage",
   :choice => ["shared", "dedicated"],
   :default => "dedicated"
 
+attribute "db_postgres/slave/sync",
+  :display_name => "Slave Sync State",
+  :description => "Enables/Disables Slave sync state with Master, if enable slave connect with master in 'sync' state, otherwise in 'async' state. To check the state of slave, run query 'select application_name,state,sync_priority,sync_state from pg_stat_replication;' on master.",
+  :choice => ["enable", "disable"],
+  :default => "disable",
+  :recipes => [ "db_postgres::setup_pgmaster" ]
