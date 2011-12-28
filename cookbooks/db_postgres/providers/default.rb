@@ -355,8 +355,7 @@ RightScale::Database::PostgreSQL::Helper.rsync_db(newmaster_host, rep_user)
 
 # Setup recovery conf
 #@db.reconfigure_replication_info(newmaster)
-RightScale::Database::PostgreSQL::Helper.reconfigure_replication_info(newmaster_host, rep_user, rep_pass)
-
+RightScale::Database::PostgreSQL::Helper.reconfigure_replication_info(newmaster_host, rep_user, rep_pass, app_name)
 
 
  Chef::Log.info "Wiping existing runtime config files"
