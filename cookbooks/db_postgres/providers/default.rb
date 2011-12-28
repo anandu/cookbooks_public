@@ -332,7 +332,7 @@ action :enable_replication do
 newmaster_host = node[:db][:current_master_ip]
 rep_user = node[:db][:replication][:user]
 rep_pass = node[:db][:replication][:password]
-
+app_name = node[:rightscale][:instance_uuid]
 
 master_info = RightScale::Database::PostgreSQL::Helper.load_replication_info(node)
 
