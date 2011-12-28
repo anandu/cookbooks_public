@@ -103,14 +103,18 @@ module RightScale
 
         def self.reconfigure_replication_info(newmaster_host = nil, rep_user = nil, rep_pass = nil)
           File.open("/var/lib/pgsql/9.1/data/recovery.conf", File::CREAT|File::TRUNC|File::RDWR) do |f|
-            f.puts("standby_mode='on'\nprimary_conninfo='host=#{newmaster_host} user=#{rep_user} password=#{rep_pass}'\ntrigger_file='/var/lib/pgsql/9.1/data/recovery.trigger'")
+          f.puts("standby_mode='on'\nprimary_conninfo='host=#{newmaster_host} user=#{rep_user} password=#{rep_pass} application_name=#{app_name}'\ntrigger_file='/var/lib/pgsql/9.1/data/recovery.trigger'")
+          `chown postgres:postgres /var/lib/pgsql/9.1/data/recovery.conf`
           end
           return $? == 0
-         bash "chown_recovery" do
-            code <<-EOH
-            chown postgres:postgres /var/lib/pgsql/9.1/data/recovery.conf
-            EOH
-         end 
+        end
+
+        # Configure the replication parameters into pg_hba.conf.
+        def self.configure_postgres_conf(node)
+          File.open("/var/lib/pgsql/9.1/data/postgresql.conf", "a") do |f|
+            f.puts("synchronous_standby_names = '*'\nsynchronous_commit = on")
+          end
+          return $? == 0
         end
 
         def self.rsync_db(newmaster_host = nil, rep_user = nil)
