@@ -77,6 +77,7 @@ action :firewall_update do
 end
 
 action :write_backup_info do
+   masterstatus = Hash.new
    masterstatus = node[:db][:current_master_ip]
   if node[:db][:this_is_master]
    Chef::Log.info "Backing up Master info"
@@ -304,13 +305,21 @@ action :grant_replication_slave do
   Gem.clear_paths
   require 'pg'
   
-  Chef::Log.info "GRANT REPLICATION SLAVE to #{node[:db][:replication][:user]}"
+  Chef::Log.info "GRANT REPLICATION SLAVE to user #{node[:db][:replication][:user]}"
   # Opening connection for pg operation
   conn = PGconn.open("localhost", nil, nil, nil, nil, "postgres", nil)
   
   # Enable admin/replication user
-  conn.exec("CREATE USER #{node[:db][:replication][:user]} SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN ENCRYPTED PASSWORD '#{node[:db][:replication][:password]}'")
-  conn.close
+  # Check if server is in read_only mode, if found skip this... 
+      res = conn.exec("show transaction_read_only")
+      slavestatus = res.getvalue(0,0)
+      if ( slavestatus == 'off' )
+        Chef::Log.info "Detected Master server."
+        conn.exec("CREATE USER #{node[:db][:replication][:user]} SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN ENCRYPTED PASSWORD '#{node[:db][:replication][:password]}'")
+      else
+        Chef::Log.info "Do nothing, Detected read_only db or slave mode"
+      end
+  conn.finish
   # Setup pg_hba.conf for replication user allow
   RightScale::Database::PostgreSQL::Helper.configure_pg_hba(node)
 
@@ -326,6 +335,15 @@ rep_pass = node[:db][:replication][:password]
 
 
 master_info = RightScale::Database::PostgreSQL::Helper.load_replication_info(node)
+
+# == Set slave state
+#
+log "Setting up slave state..."
+ruby_block "set slave state" do
+  block do
+    node[:db][:this_is_master] = false
+  end
+end
 
 # Stoping Postgresql service
 action_stop
