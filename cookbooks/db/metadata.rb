@@ -20,7 +20,6 @@ recipe  "db::install_server", "Installs and sets up the packages that are requir
 
 recipe  "db::setup_monitoring", "Installs the collectd plugin for database monitoring support, which is required to enable monitoring and alerting functionality for your servers."
 
-recipe  "db::setup_block_device", "This will initialize your database onto a block device that supports backup and restore operations."
 
 # == Common Database Recipes
 #
@@ -58,7 +57,6 @@ recipe "db::request_appserver_deny", "Sends a request to deny connections from t
 # == Master/Slave Recipes
 #
 recipe "db::do_init_and_become_master", "Initializes MySQL database.  Tag as Master.  Set Master DNS.  Kick off a fresh backup from this master."
-recipe "db::do_init", "Initializes database."
 recipe "db::do_restore_and_become_master", "Restore MySQL database.  Tag as Master.  Set Master DNS.  Kick off a fresh backup from this master."
 recipe "db::do_init_slave", "Initialize MySQL Slave"
 recipe "db::do_init_slave_at_boot", "Initialize MySQL Slave at boot."
@@ -69,7 +67,6 @@ recipe "db::request_master_deny", "Sends a request to the master database server
 
 recipe "db::handle_demote_master", "Remote recipe executed by do_promote_to_master. DO NOT RUN."
 
-recipe "db::do_terminate_server", "Deletes any currently attached volumes from the instance and then terminates the machine."
 
 # == Common Database Attributes
 #
@@ -106,13 +103,13 @@ attribute "db/replication/user",
   :display_name => "Database Replication Username",
   :description => "The username of the database user that has 'replciation' privileges.",
   :required => true,
-  :recipes => [ "db::setup_replication_privileges", "db::do_restore_and_become_master", "db::do_init_and_become_master", "db::do_promote_to_master", "db::do_init_slave", "db::do_init_slave_at_boot", "db::do_init" ]
+  :recipes => [ "db::setup_replication_privileges", "db::do_restore_and_become_master", "db::do_init_and_become_master", "db::do_promote_to_master", "db::do_init_slave", "db::do_init_slave_at_boot" ]
 
 attribute "db/replication/password",
   :display_name => "Database Replication Password",
   :description => "The password of the database user that has 'replciation' privileges.",
   :required => true,
-  :recipes => [ "db::setup_replication_privileges", "db::do_restore_and_become_master", "db::do_init_and_become_master", "db::do_promote_to_master","db::do_init_slave", "db::do_init_slave_at_boot", "db::do_init" ]
+  :recipes => [ "db::setup_replication_privileges", "db::do_restore_and_become_master", "db::do_init_and_become_master", "db::do_promote_to_master","db::do_init_slave", "db::do_init_slave_at_boot" ]
 
 attribute "db/application/user",
   :display_name => "Database Application Username",
@@ -146,15 +143,13 @@ attribute "db/backup/lineage",
     "db::do_promote_to_master",
     "db::do_restore_and_become_master",
     "db::do_init_and_become_master",
-    "db::do_init",
     "db::do_backup",
     "db::do_restore",
     "db::do_backup_schedule_enable",
     "db::do_backup_schedule_disable",
     "db::do_force_reset",
     "db::do_secondary_backup",
-    "db::do_secondary_restore",
-    "db::setup_block_device"
+    "db::do_secondary_restore"
   ]
   
 attribute "db/backup/timestamp_override",
@@ -244,21 +239,3 @@ attribute "db/dump/database_name",
   :description => "Enter the name of the database name/schema to create/restore a dump from/for. Ex: mydbschema",
   :required => "required",
   :recipes => [ "db::do_dump_import", "db::do_dump_export", "db::do_dump_schedule_enable" ]
-
-attribute "db/terminate_safety",
-  :display_name => "Terminate Saftey",
-  :description => "Prevents the accidental running of the db::do_teminate_server recipe.  This recipe will only run if the input variable is overridden and set to \"off\".",
-  :type => "string",
-  :choice => ["Override the dropdown and set to \"off\" to really run this recipe"],
-  :default => "Override the dropdown and set to \"off\" to really run this recipe",
-  :required => false,
-  :recipes => [ "db::do_terminate_server" ]
-
-attribute "db/force_safety",
-  :display_name => "Force Reset Saftey",
-  :description => "Prevents the accidental running of the db::do_force_reset recipe.  This recipe will only run if the input variable is overridden and set to \"off\".",
-  :type => "string",
-  :choice => ["Override the dropdown and set to \"off\" to really run this recipe"],
-  :default => "Override the dropdown and set to \"off\" to really run this recipe",
-  :required => false,
-  :recipes => [ "db::do_force_reset" ]

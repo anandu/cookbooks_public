@@ -10,18 +10,15 @@
     "db::handle_demote_master": "Remote recipe executed by do_promote_to_master. DO NOT RUN.",
     "db::do_restore": "Restores the database from the most recently completed backup available in persistent storage of the current cloud.",
     "db::do_init_slave": "Initialize MySQL Slave",
-    "db::do_init": "Initializes database.",
     "db::do_dump_schedule_disable": "Disables the daily run of do_dump_export.",
     "db::setup_monitoring": "Installs the collectd plugin for database monitoring support, which is required to enable monitoring and alerting functionality for your servers.",
     "db::do_restore_and_become_master": "Restore MySQL database.  Tag as Master.  Set Master DNS.  Kick off a fresh backup from this master.",
     "db::request_appserver_allow": "Sends a request to allow connections from the caller's private IP address to all database servers in the deployment that are tagged with the database:active=true tag. This should be run on an application server before attempting a database connection.",
     "db::do_dump_schedule_enable": "Schedules the daily run of do_dump_export.",
     "db::do_dump_export": "Creates a dump file and uploads it to an ROS.",
-    "db::do_terminate_server": "Deletes any currently attached volumes from the instance and then terminates the machine.",
     "db::request_master_deny": "Sends a request to the master database server tagged with rs_dbrepl:master_instance_uuid=<master_instance_uuid> to deny connections from the server's private IP address.  This script should be run on a slave when it stops replicating.",
     "db::setup_replication_privileges": "Set up privileges for MySQL replication slaves.",
     "db::do_secondary_backup": "Creates a backup of the database and uploads it to a secondary cloud storage location, which can be used to migrate your database to a different cloud.  For example, you can save a secondary backup to an AWS S3 bucket or a Rackspace CloudFiles container.",
-    "db::setup_block_device": "This will initialize your database onto a block device that supports backup and restore operations.",
     "db::default": "Adds the database:active=true tag to your server which identifies it as an database server. The tag is used by application servers to identify active databases. It also loads the required 'db' resources.",
     "db::do_secondary_restore": "Restores the database from the most recently completed backup available in a secondary location.",
     "db::do_backup": "Creates a backup of the database using persistent storage in the current cloud.  On Rackspace, LVM backups are uploaded to the specified CloudFiles container.  For all other clouds, volume snapshots (like EBS) are used.",
@@ -74,20 +71,6 @@
       ],
       "display_name": "Database Application Password",
       "description": "The password of the database user that has 'user' privileges."
-    },
-    "db/terminate_safety": {
-      "required": "optional",
-      "calculated": false,
-      "choice": [
-        "Override the dropdown and set to \"off\" to really run this recipe"
-      ],
-      "default": "Override the dropdown and set to \"off\" to really run this recipe",
-      "type": "string",
-      "recipes": [
-        "db::do_terminate_server"
-      ],
-      "display_name": "Terminate Saftey",
-      "description": "Prevents the accidental running of the db::do_teminate_server recipe.  This recipe will only run if the input variable is overridden and set to \"off\"."
     },
     "db/dump/container": {
       "required": "required",
@@ -287,15 +270,13 @@
         "db::do_promote_to_master",
         "db::do_restore_and_become_master",
         "db::do_init_and_become_master",
-        "db::do_init",
         "db::do_backup",
         "db::do_restore",
         "db::do_backup_schedule_enable",
         "db::do_backup_schedule_disable",
         "db::do_force_reset",
         "db::do_secondary_backup",
-        "db::do_secondary_restore",
-        "db::setup_block_device"
+        "db::do_secondary_restore"
       ],
       "display_name": "Backup Lineage",
       "description": "The prefix that will be used to name/locate the backup of a particular database."
@@ -313,8 +294,7 @@
         "db::do_init_and_become_master",
         "db::do_promote_to_master",
         "db::do_init_slave",
-        "db::do_init_slave_at_boot",
-        "db::do_init"
+        "db::do_init_slave_at_boot"
       ],
       "display_name": "Database Replication Password",
       "description": "The password of the database user that has 'replciation' privileges."
@@ -372,25 +352,10 @@
         "db::do_init_and_become_master",
         "db::do_promote_to_master",
         "db::do_init_slave",
-        "db::do_init_slave_at_boot",
-        "db::do_init"
+        "db::do_init_slave_at_boot"
       ],
       "display_name": "Database Replication Username",
       "description": "The username of the database user that has 'replciation' privileges."
-    },
-    "db/force_safety": {
-      "required": "optional",
-      "calculated": false,
-      "choice": [
-        "Override the dropdown and set to \"off\" to really run this recipe"
-      ],
-      "default": "Override the dropdown and set to \"off\" to really run this recipe",
-      "type": "string",
-      "recipes": [
-        "db::do_force_reset"
-      ],
-      "display_name": "Force Reset Saftey",
-      "description": "Prevents the accidental running of the db::do_force_reset recipe.  This recipe will only run if the input variable is overridden and set to \"off\"."
     },
     "db/dump/storage_account_provider": {
       "required": "required",
