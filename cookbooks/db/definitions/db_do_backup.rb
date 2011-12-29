@@ -44,21 +44,17 @@ define :db_do_backup, :force => false, :backup_type => "primary" do
   do_force        = params[:force] == true ? true : false
   do_backup_type  = params[:backup_type] == "primary" ? "primary" : "secondary"
 
-  # Initializing the database, as this server is standalone now
-  #log "  Setting state of database to be 'initialized'..."
-  #db_init_status :set
-
   # == Check if database is able to be backed up (initialized)
   # must be done in ruby block to expand node during converge not compile
   Chef::Log.info "Checking db_init_status making sure db ready for backup"
-  #db_init_status :check do
-  #  expected_state :initialized
-  #  error_message "Database not initialized."
-  #end
+  db_init_status :check do
+    expected_state :initialized
+    error_message "Database not initialized."
+  end
 
   # == Verify initalized database
   # Check the node state to verify that we have correctly initialized this server.
-  # db_state_assert :either  # anand: done for postgres
+  db_state_assert :either
   
   log "  Performing pre-backup check..." 
   db DATA_DIR do
@@ -76,7 +72,7 @@ define :db_do_backup, :force => false, :backup_type => "primary" do
     force do_force
   end
   
-  #log "  Performing (#{do_backup_type} backup) lock DB and write backup info file..."
+  log "  Performing (#{do_backup_type} backup) lock DB and write backup info file..."
   db DATA_DIR do
     action [ :lock, :write_backup_info ]
   end
