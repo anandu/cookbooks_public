@@ -77,19 +77,13 @@ action :firewall_update do
 end
 
 action :write_backup_info do
- # masterstatus = Hash.new
- # masterstatus = RightScale::Database::PostgreSQL::Helper.do_query(node, 'select version()')
- # masterstatus['Master_IP'] = node[:db][:current_master_ip]
- # masterstatus['Master_instance_uuid'] = node[:db][:current_master_uuid]
- # slavestatus = RightScale::Database::PostgreSQL::Helper.do_query(node, 'SHOW SLAVE STATUS')
- # slavestatus ||= Hash.new
- # if node[:db][:this_is_master]
-    Chef::Log.info "Backing up Master info"
- # else
- #   Chef::Log.info "Backing up slave replication status"
-#    masterstatus['File'] = slavestatus['Relay_Master_Log_File']
-#    masterstatus['Position'] = slavestatus['Exec_Master_Log_Pos']
- # end
+   masterstatus = Hash.new
+   masterstatus = node[:db][:current_master_ip]
+  if node[:db][:this_is_master]
+   Chef::Log.info "Backing up Master info"
+  else
+    Chef::Log.info "Backing up slave replication status"
+  end
   Chef::Log.info "Saving master info...:\n#{masterstatus.to_yaml}"
   ::File.open(::File.join(node[:db][:data_dir], RightScale::Database::PostgreSQL::Helper::SNAPSHOT_POSITION_FILENAME), ::File::CREAT|::File::TRUNC|::File::RDWR) do |out|
     YAML.dump(masterstatus, out)
@@ -245,7 +239,6 @@ action :install_server do
     recursive true
   end
 
-
   # Setup postgresql.conf
   # template_source = "postgresql.conf.erb"
 
@@ -303,17 +296,115 @@ action :grant_replication_slave do
   require 'rubygems'
   Gem.clear_paths
   require 'pg'
-  admin_role = node[:db_postgres][:admin_role]
-
-  Chef::Log.info "GRANT REPLICATION SLAVE to #{node[:db][:replication][:user]}"
+  
+  Chef::Log.info "GRANT REPLICATION SLAVE to user #{node[:db][:replication][:user]}"
   # Opening connection for pg operation
   conn = PGconn.open("localhost", nil, nil, nil, nil, "postgres", nil)
-
+  
   # Enable admin/replication user
-  conn.exec("CREATE USER #{node[:db][:replication][:user]} SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN ENCRYPTED PASSWORD '#{node[:db][:replication][:password]}'")
-  # Grant role previleges to admin/replication user
-  # conn.exec("GRANT #{admin_role} TO #{node[:db][:replication][:user]}")
-  conn.close
+  # Check if server is in read_only mode, if found skip this... 
+      res = conn.exec("show transaction_read_only")
+      slavestatus = res.getvalue(0,0)
+      if ( slavestatus == 'off' )
+        Chef::Log.info "Detected Master server."
+        result = conn.exec("SELECT COUNT(*) FROM pg_user WHERE usename='#{node[:db][:replication][:user]}'")
+        userstat = result.getvalue(0,0)
+        if ( userstat == '1' )
+          Chef::Log.info "User #{node[:db][:replication][:user]} already exists, updating user using current inputs"
+          conn.exec("ALTER USER #{node[:db][:replication][:user]} SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN ENCRYPTED PASSWORD '#{node[:db][:replication][:password]}'")
+        else
+          Chef::Log.info "creating replication user #{node[:db][:replication][:user]}"
+          conn.exec("CREATE USER #{node[:db][:replication][:user]} SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN ENCRYPTED PASSWORD '#{node[:db][:replication][:password]}'")
+          # Setup pg_hba.conf for replication user allow
+          RightScale::Database::PostgreSQL::Helper.configure_pg_hba(node)
+          # Reload postgresql to read new updated pg_hba.conf
+          RightScale::Database::PostgreSQL::Helper.do_query('select pg_reload_conf()')
+        end
+      else
+        Chef::Log.info "Do nothing, Detected read_only db or slave mode"
+      end
+  conn.finish
+end
+
+action :enable_replication do
+
+newmaster_host = node[:db][:current_master_ip]
+rep_user = node[:db][:replication][:user]
+rep_pass = node[:db][:replication][:password]
+app_name = node[:rightscale][:instance_uuid]
+
+master_info = RightScale::Database::PostgreSQL::Helper.load_replication_info(node)
+
+# == Set slave state
+#
+log "Setting up slave state..."
+ruby_block "set slave state" do
+  block do
+    node[:db][:this_is_master] = false
+  end
+end
+
+# Stoping Postgresql service
+action_stop
+
+# Sync to Master data
+#@db.rsync_db(newmaster_host)
+RightScale::Database::PostgreSQL::Helper.rsync_db(newmaster_host, rep_user)
+
+
+# Setup recovery conf
+#@db.reconfigure_replication_info(newmaster)
+RightScale::Database::PostgreSQL::Helper.reconfigure_replication_info(newmaster_host, rep_user, rep_pass, app_name)
+
+
+ Chef::Log.info "Wiping existing runtime config files"
+`rm -rf "#{node[:db][:datadir]}/pg_xlog/*"`
+
+
+
+# ensure_db_started
+# service provider uses the status command to decide if it
+# has to run the start command again.
+  5.times do
+      action_start
+  end
+
+  ruby_block "validate_backup" do
+    block do
+      master_info = RightScale::Database::PostgreSQL::Helper.load_replication_info(node)
+      #raise "Position and file not saved!" unless master_info['Master_instance_uuid']
+      # Check that the snapshot is from the current master or a slave associated with the current master
+      #  if master_info['Master_instance_uuid'] != node[:db][:current_master_uuid]
+      #  raise "FATAL: snapshot was taken from a different master! snap_master was:#{master_info['Master_instance_uuid']} != current master: #{node[:db][:current_master_uuid]}"
+      #  end
+      end
+   end
+
+end
+
+
+action :promote do
+
+  previous_master = node[:db][:current_master_ip]
+  # raise "FATAL: could not determine master host from slave status" if previous_master.nil?
+  Chef::Log.info "host: #{previous_master}}"
+  
+  # PHASE1: contains non-critical old master operations, if a timeout or
+  # error occurs we continue promotion assuming the old master is dead.
+
+  begin
+  
+  # Promote the slave into the new master  
+    Chef::Log.info "Promoting slave.."
+    RightScale::Database::PostgreSQL::Helper.write_trigger(node)
+    sleep 10
+
+  # Let the new slave loose and thus let him become the new master
+    Chef::Log.info  "New master is ReadWrite."
+    
+  rescue => e
+    Chef::Log.info "WARNING: caught exception #{e} during critical operations on the MASTER"
+  end
 end
 
 action :setup_monitoring do
@@ -397,7 +488,7 @@ action :restore_from_dump_file do
     end
   end
 
-  bash "Import MySQL dump file: #{dumpfile}" do
+  bash "Import PostgreSQL dump file: #{dumpfile}" do
     user "postgres"
     code <<-EOH
       set -e

@@ -78,8 +78,7 @@ define :db_do_backup, :force => false, :backup_type => "primary" do
   
   #log "  Performing (#{do_backup_type} backup) lock DB and write backup info file..."
   db DATA_DIR do
-    #action [ :lock, :write_backup_info ]
-    action [ :lock ]
+    action [ :lock, :write_backup_info ]
   end
   
   log "  Performing (#{do_backup_type} backup)Snapshot with lineage #{node[:db][:backup][:lineage]}.."

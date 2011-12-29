@@ -52,6 +52,14 @@ module RightScale
           YAML::load_file(loadfile)
         end
 
+        # Configure the replication parameters into pg_hba.conf.
+        def self.configure_pg_hba(node)
+          File.open("/var/lib/pgsql/9.1/data/pg_hba.conf", "a") do |f|
+            f.puts("host    replication     #{node[:db][:replication][:user]}          0.0.0.0/0            trust")
+          end
+          return $? == 0
+        end
+
         def self.get_pgsql_handle(hostname = "localhost", username = "postgres")
           info_msg = "PostgreSQL connection to #{hostname}"
           info_msg << ": opening NEW PostgreSQL connection."
@@ -75,21 +83,49 @@ module RightScale
               Chef::Log.info info_msg
               result = nil
               if timeout
-                SystemTimer.timeout_after(timeout) do
-                  conn = get_pgsql_handle("localhost", nil, nil, nil, nil, "postgres", nil)
+                  SystemTimer.timeout_after(timeout) do
+                  conn = PGconn.open("localhost", nil, nil, nil, nil, "postgres", nil)
                   result = conn.exec(query)
                 end
               else
-                conn = get_pgsql_handle("localhost", nil, nil, nil, nil, "postgres", nil)
+                conn = PGconn.open("localhost", nil, nil, nil, nil, "postgres", nil)
                 result = conn.exec(query)
               end
-              return result.get_result if result
+              return result.getvalue(0,0) if result
               return result
             rescue Timeout::Error => e
               Chef::Log.info("Timeout occured during pgsql query:#{e}")
               tries -= 1
               raise "FATAL: retry count reached" if tries == 0
             end
+          end
+        end
+
+        def self.reconfigure_replication_info(newmaster_host = nil, rep_user = nil, rep_pass = nil, app_name = nil)
+          File.open("/var/lib/pgsql/9.1/data/recovery.conf", File::CREAT|File::TRUNC|File::RDWR) do |f|
+          f.puts("standby_mode='on'\nprimary_conninfo='host=#{newmaster_host} user=#{rep_user} password=#{rep_pass} application_name=#{app_name}'\ntrigger_file='/var/lib/pgsql/9.1/data/recovery.trigger'")
+          `chown postgres:postgres /var/lib/pgsql/9.1/data/recovery.conf`
+          end
+          return $? == 0
+        end
+
+        # Configure the replication parameters into pg_hba.conf.
+        def self.configure_postgres_conf(node)
+          File.open("/var/lib/pgsql/9.1/data/postgresql.conf", "a") do |f|
+            f.puts("synchronous_standby_names = '*'\nsynchronous_commit = on")
+          end
+          return $? == 0
+        end
+
+        def self.rsync_db(newmaster_host = nil, rep_user = nil)
+          puts `su - postgres -c "env PGCONNECT_TIMEOUT=30 /usr/pgsql-9.1/bin/pg_basebackup -D /var/lib/pgsql/9.1/backups -U #{rep_user} -h #{newmaster_host}"`
+          puts `su - postgres -c "rsync -av /var/lib/pgsql/9.1/backups/ /var/lib/pgsql/9.1/data --exclude postgresql.conf --exclude pg_hba.conf"`
+          return $? == 0
+        end
+
+        def self.write_trigger(node)
+          File.open("/var/lib/pgsql/9.1/data/recovery.trigger", File::CREAT|File::TRUNC|File::RDWR) do |f|
+            f.puts(" ")
           end
         end
 

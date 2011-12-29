@@ -30,14 +30,14 @@ set_unless[:db][:admin][:password] = ""
 set_unless[:db][:replication][:user] = nil
 set_unless[:db][:replication][:password] = nil
 
-set_unless[:db][:backup][:lineage] = "testa"
+set_unless[:db][:backup][:lineage] = ""
 
 #
 # Server state variables
 #
 set_unless[:db][:init_status] = :uninitialized  # Checks if DB has been initialezed
-#set_unless[:db][:this_is_master] = false
-set_unless[:db][:this_is_master] = true
+set_unless[:db][:this_is_master] = false
+#set_unless[:db][:this_is_master] = true
 set_unless[:db][:current_master_uuid] = nil
 set_unless[:db][:current_master_ip] = nil
 
