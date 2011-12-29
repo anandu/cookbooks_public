@@ -239,14 +239,6 @@ action :install_server do
     recursive true
   end
 
-  # Create the Archive directory
-  directory "#{node[:db_postgres][:confdir]}/archive" do
-    owner "postgres"
-    group "postgres"
-    mode 0770
-    recursive true
-  end
-
   # Setup postgresql.conf
   # template_source = "postgresql.conf.erb"
 
