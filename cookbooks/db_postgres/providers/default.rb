@@ -130,10 +130,7 @@ action :install_client do
   # Install PostgreSQL 9.1.1 package(s)
   if node[:platform] == "centos"
    arch = node[:kernel][:machine]
-   arch = "x86_64" if arch == "i386"
-  
-  # Install PostgreSQL GPG Key (http://yum.postgresql.org/9.1/redhat/rhel-5-(arch)/pgdg-centos91-9.1-4.noarch.rpm)
-  # pgreporpm = ::File.join(::File.dirname(__FILE__), "..", "files", "centos", "pgdg-centos91-9.1-4.noarch.rpm")
+   arch = "i386" if arch == "i686"
   
   package "libxslt" do
     action :install
@@ -150,11 +147,6 @@ action :install_client do
     end
   end
 
-  # Packages from cookbook files as attachment for PostgreSQL 9.1.1
-  # Install PostgreSQL client rpm
-  #  pgdevelrpm = ::File.join(::File.dirname(__FILE__), "..", "files", "centos", "postgresql91-devel-9.1.1-1PGDG.rhel5.#{arch}.rpm")
-  #  `yum -y localinstall #{pgdevelrpm}`
-
   else
 
     # Currently supports CentOS in future will support others
@@ -162,21 +154,10 @@ action :install_client do
   end
 
   # == Install PostgreSQL client gem
-  #
-  # Also installs in compile phase
-  #
-  #r = execute "install pg gem" do
-  #  command "/opt/rightscale/sandbox/bin/gem install pg -- --with-pg-config=/usr/pgsql-9.1/bin/pg_config"
-  #end
-  #r.run_action(:run)
-
   gem_package("pg") do
     gem_binary("/opt/rightscale/sandbox/bin/gem")
     options("-- --with-pg-config=/usr/pgsql-9.1/bin/pg_config")
   end
-
-  # Gem.clear_paths
-  # log "Gem reload forced with Gem.clear_paths"
 end
 
 action :install_server do
