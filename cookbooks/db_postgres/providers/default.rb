@@ -130,7 +130,8 @@ action :install_client do
   # Install PostgreSQL 9.1.1 package(s)
   if node[:platform] == "centos"
    arch = node[:kernel][:machine]
-   arch = "i386" if arch == "i686"
+   # arch = "x86_64" if arch == "i386"
+   arch = "i386" unless arch == "x86_64"
   
   package "libxslt" do
     action :install
