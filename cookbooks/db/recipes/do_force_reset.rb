@@ -11,10 +11,7 @@
  
 rs_utils_marker :begin
 
-raise "Force reset safety not off.  Override db/force_safety to run this recipe" unless node[:db][:force_safety] == "off"
-
 log "  Brute force tear down of the setup....."
-
 DATA_DIR = node[:db][:data_dir]
 
 log "  Resetting the database..."
@@ -53,7 +50,7 @@ db_init_status :reset
 
 log "  Cleaning cron..."
 block_device DATA_DIR do
-  cron_backup_recipe "#{self.cookbook_name}::do_primary_backup"
+  cron_backup_recipe "#{self.cookbook_name}::do_backup"
   action :backup_schedule_disable
 end
 
