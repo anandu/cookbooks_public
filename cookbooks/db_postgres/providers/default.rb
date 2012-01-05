@@ -167,7 +167,8 @@ action :install_server do
   action_install_client
 
    arch = node[:kernel][:machine]
-   arch = "x86_64" if arch == "i386"
+   #arch = "x86_64" if arch == "i386"
+   arch = "i386" unless arch == "x86_64"
  
   package "uuid" do
     action :install
@@ -395,7 +396,8 @@ action :setup_monitoring do
   end
 
   arch = node[:kernel][:machine]
-  arch = "i386" if arch == "i686"
+  #arch = "i386" if arch == "i686"
+  arch = "i386" unless arch == "x86_64"
 
   if node[:platform] == 'centos'
 
