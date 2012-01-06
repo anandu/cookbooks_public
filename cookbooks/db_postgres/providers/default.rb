@@ -439,8 +439,7 @@ action :setup_monitoring do
   end
 
   arch = node[:kernel][:machine]
-  #arch = "i386" if arch == "i686"
-  arch = "i386" unless arch == "x86_64"
+  arch = "i386" if arch == "i686"
 
   if node[:platform] == 'centos'
 
