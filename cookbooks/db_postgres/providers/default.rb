@@ -363,6 +363,49 @@ RightScale::Database::PostgreSQL::Helper.reconfigure_replication_info(newmaster_
       end
    end
 
+  # Now setup monitoring for slave replication, hard to define the lag, we are trying to get master/slave sync health status
+
+  # install the pg_cluster_status collectd script into the collectd library plugins directory
+  remote_file ::File.join(node[:rs_utils][:collectd_lib], "plugins", 'pg_cluster_status') do
+    source "pg_cluster_status"
+    mode "0755"
+    cookbook 'db_postgres'
+  end
+
+  # add a collectd config file for the pg_cluster_status script with the exec plugin and restart collectd if necessary
+  template ::File.join(node[:rs_utils][:collectd_plugin_dir], 'pg_cluster_status.conf') do
+    source "pg_cluster_status_exec.erb"
+    cookbook 'db_postgres'
+  end
+
+  # install the check_hot_standby_delay collectd script into the collectd library plugins directory
+  remote_file ::File.join(node[:rs_utils][:collectd_lib], "plugins", 'check_hot_standby_delay') do
+    source "check_hot_standby_delay"
+    mode "0755"
+    cookbook 'db_postgres'
+  end
+
+  # add a collectd config file for the check_hot_standby_delay script with the exec plugin and restart collectd if necessary
+  template ::File.join(node[:rs_utils][:collectd_plugin_dir], 'check_hot_standby_delay.conf') do
+    source "check_hot_standby_delay_exec.erb"
+    cookbook 'db_postgres'
+  end
+
+  # Setting pg_state and pg_data types for pg slave monitoring into types.db
+  ruby_block "add_collectd_gauges" do
+    block do
+      types_file = ::File.join(node[:rs_utils][:collectd_share], 'types.db')
+      typesdb = IO.read(types_file)
+      unless typesdb.include?('pg_data') && typesdb.include?('pg_state')
+        typesdb += "\npg_data                 value:GAUGE:0:9223372036854775807\npg_state                value:GAUGE:0:65535"
+        ::File.open(types_file, "w") { |f| f.write(typesdb) }
+      end
+    end
+  end
+
+  # Restart collectd after all done to run monitoring scripts on slave
+  execute "/etc/init.d/collectd restart"
+
 end
 
 
