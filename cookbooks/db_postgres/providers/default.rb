@@ -200,7 +200,7 @@ action :install_server do
 
   # Initialize PostgreSQL server and create system tables
   touchfile = ::File.expand_path "~/.postgresql_installed"
-  execute "/etc/init.d/postgresql-9.1 initdb" do
+  execute "/etc/init.d/postgresql-9.1 initdb ; touch #{touchfile}" do
     creates touchfile
   end
   
