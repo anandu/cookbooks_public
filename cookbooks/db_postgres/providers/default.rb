@@ -371,7 +371,7 @@ RightScale::Database::PostgreSQL::Helper.reconfigure_replication_info(newmaster_
   # Now setup monitoring for slave replication, hard to define the lag, we are trying to get master/slave sync health status
 
   # install the pg_cluster_status collectd script into the collectd library plugins directory
-  template ::File.join(node[:rs_utils][:collectd_lib], "plugins", 'pg_cluster_status') do
+  cookbook_file ::File.join(node[:rs_utils][:collectd_lib], "plugins", 'pg_cluster_status') do
     source "pg_cluster_status"
     mode "0755"
     cookbook 'db_postgres'
@@ -384,7 +384,7 @@ RightScale::Database::PostgreSQL::Helper.reconfigure_replication_info(newmaster_
   end
 
   # install the check_hot_standby_delay collectd script into the collectd library plugins directory
-  template ::File.join(node[:rs_utils][:collectd_lib], "plugins", 'check_hot_standby_delay') do
+  cookbook_file ::File.join(node[:rs_utils][:collectd_lib], "plugins", 'check_hot_standby_delay') do
     source "check_hot_standby_delay"
     mode "0755"
     cookbook 'db_postgres'
@@ -467,7 +467,7 @@ action :setup_monitoring do
     end
 
     # install the postgres_ps collectd script into the collectd library plugins directory
-    template ::File.join(node[:rs_utils][:collectd_lib], "plugins", 'postgres_ps') do
+    cookbook_file ::File.join(node[:rs_utils][:collectd_lib], "plugins", 'postgres_ps') do
       source "postgres_ps"
       mode "0755"
       cookbook 'db_postgres'
