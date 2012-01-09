@@ -77,12 +77,17 @@ action :firewall_update do
 end
 
 action :write_backup_info do
-   masterstatus = Hash.new
-   masterstatus = node[:db][:current_master_ip]
+    File_position = `/usr/pgsql-9.1/bin/pg_controldata /var/lib/pgsql/9.1/data/ | grep "Latest checkpoint location:" | awk '{print $NF}'`
+    masterstatus = Hash.new
+    masterstatus['Master_IP'] = node[:db][:current_master_ip]
+    masterstatus['Master_instance_uuid'] = node[:db][:current_master_uuid]
+    slavestatus ||= Hash.new
+    slavestatus['File_position'] = File_position
   if node[:db][:this_is_master]
-   Chef::Log.info "Backing up Master info"
+    Chef::Log.info "Backing up Master info"
   else
     Chef::Log.info "Backing up slave replication status"
+    masterstatus['File_position'] = slavestatus['File_position']
   end
   Chef::Log.info "Saving master info...:\n#{masterstatus.to_yaml}"
   ::File.open(::File.join(node[:db][:data_dir], RightScale::Database::PostgreSQL::Helper::SNAPSHOT_POSITION_FILENAME), ::File::CREAT|::File::TRUNC|::File::RDWR) do |out|
@@ -355,18 +360,18 @@ RightScale::Database::PostgreSQL::Helper.reconfigure_replication_info(newmaster_
   ruby_block "validate_backup" do
     block do
       master_info = RightScale::Database::PostgreSQL::Helper.load_replication_info(node)
-      #raise "Position and file not saved!" unless master_info['Master_instance_uuid']
+      raise "Position and file not saved!" unless master_info['Master_instance_uuid']
       # Check that the snapshot is from the current master or a slave associated with the current master
-      #  if master_info['Master_instance_uuid'] != node[:db][:current_master_uuid]
-      #  raise "FATAL: snapshot was taken from a different master! snap_master was:#{master_info['Master_instance_uuid']} != current master: #{node[:db][:current_master_uuid]}"
-      #  end
+      if master_info['Master_instance_uuid'] != node[:db][:current_master_uuid]
+        raise "FATAL: snapshot was taken from a different master! snap_master was:#{master_info['Master_instance_uuid']} != current master: #{node[:db][:current_master_uuid]}"
       end
-   end
+    end
+  end
 
   # Now setup monitoring for slave replication, hard to define the lag, we are trying to get master/slave sync health status
 
   # install the pg_cluster_status collectd script into the collectd library plugins directory
-  remote_file ::File.join(node[:rs_utils][:collectd_lib], "plugins", 'pg_cluster_status') do
+  template ::File.join(node[:rs_utils][:collectd_lib], "plugins", 'pg_cluster_status') do
     source "pg_cluster_status"
     mode "0755"
     cookbook 'db_postgres'
@@ -379,7 +384,7 @@ RightScale::Database::PostgreSQL::Helper.reconfigure_replication_info(newmaster_
   end
 
   # install the check_hot_standby_delay collectd script into the collectd library plugins directory
-  remote_file ::File.join(node[:rs_utils][:collectd_lib], "plugins", 'check_hot_standby_delay') do
+  template ::File.join(node[:rs_utils][:collectd_lib], "plugins", 'check_hot_standby_delay') do
     source "check_hot_standby_delay"
     mode "0755"
     cookbook 'db_postgres'
@@ -412,7 +417,7 @@ end
 action :promote do
 
   previous_master = node[:db][:current_master_ip]
-  # raise "FATAL: could not determine master host from slave status" if previous_master.nil?
+  raise "FATAL: could not determine master host from slave status" if previous_master.nil?
   Chef::Log.info "host: #{previous_master}}"
   
   # PHASE1: contains non-critical old master operations, if a timeout or
@@ -462,7 +467,7 @@ action :setup_monitoring do
     end
 
     # install the postgres_ps collectd script into the collectd library plugins directory
-    remote_file ::File.join(node[:rs_utils][:collectd_lib], "plugins", 'postgres_ps') do
+    template ::File.join(node[:rs_utils][:collectd_lib], "plugins", 'postgres_ps') do
       source "postgres_ps"
       mode "0755"
       cookbook 'db_postgres'
